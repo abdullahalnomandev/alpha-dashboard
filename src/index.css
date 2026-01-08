@@ -1,0 +1,44 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+
+::-webkit-scrollbar {
+  width: 10px;
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #f3f3f3;
+  border-radius: 8px;
+  min-height: 30px;
+  box-shadow: none;
+  border: none;
+  transition: background 0.2s;
+}
+
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #f3f3f3 #fff;
+}
+
+/* Hide scrollbar buttons (arrows) for Webkit browsers */
+::-webkit-scrollbar-button {
+  display: none;
+  height: 0;
+  width: 0;
+}
