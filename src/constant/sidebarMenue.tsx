@@ -11,6 +11,8 @@ import { MdOutlineFoodBank } from "react-icons/md";
 import MealPrepRecipesPage from "../pages/mealPrepRecipes";
 import { VscCalendar } from "react-icons/vsc";
 import EventPage from "../pages/event";
+import ClubPage from "../pages/club";
+import { WiTime4 } from "react-icons/wi";
 
 
 export const MENU_CONFIG = [
@@ -34,6 +36,13 @@ export const MENU_CONFIG = [
       icon: <VscCalendar />,
       element:<EventPage />,
       path: '/event',
+    },
+    {
+      key: 'club',
+      label: 'Club',
+      icon: <WiTime4  />,
+      element:<ClubPage />,
+      path: '/club',
     },
     {
       key: 'order',
