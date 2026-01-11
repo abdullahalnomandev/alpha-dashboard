@@ -13,11 +13,16 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
     return (
       <div
         style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          minHeight: "60vh",
+          background: "rgba(255,255,255,0.96)",
+          zIndex: 9999,
           color: "#444",
           fontSize: "1.15rem",
           letterSpacing: 0.2,

@@ -10,49 +10,43 @@ import {
   Popconfirm,
   Tooltip,
 } from "antd";
-
 import type { TableColumnsType, TablePaginationConfig } from "antd";
 import { FiEdit, FiSearch } from "react-icons/fi";
 import {
   EyeOutlined,
   PlusOutlined,
-  DeleteOutlined
+  DeleteOutlined,
 } from "@ant-design/icons";
-
 import {
-  useGetClubsQuery,
-  useGetClubDetailsQuery,
-  useCreateClubMutation,
-  useUpdateClubMutation,
-  useDeleteClubMutation,
-} from "../../redux/apiSlices/clubSlice";
-import { imageUrl } from "../../redux/api/baseApi";
+  useGetStoriesQuery,
+  useGetStoryDetailsQuery,
+  useCreateStoryMutation,
+  useUpdateStoryMutation,
+  useDeleteStoryMutation,
+} from "../../redux/apiSlices/storiesSlice";
 import { EditorProvider } from "react-simple-wysiwyg";
-import { ClubInfoModel } from "./ClubInfoModel";
-import { ClubModel } from "./ClubModel";
-
+import { StoryInfoModal } from "./StoryInfoModal";
+import { StoryModal } from "./StoryModal";
+import { imageUrl } from "../../redux/api/baseApi";
 const { Text } = Typography;
 
-/* =====================
-   Types
-===================== */
-export type ClubType = {
+// Types
+export type StoryType = {
   _id: string;
-  image: string;
-  name: string;
-  limitOfMember: number;
-  numberOfMembers: number;
-  location?: string;
-  description?: string;
-  active?: boolean;
+  title: string;
+  image?: string;
+  club?: {
+    _id: string;
+    name: string;
+  };
+  likeCount?: number;
   createdAt?: string;
+  description?: string;
   updatedAt?: string;
 };
 
-/* =====================
-   Main Page
-===================== */
-const Club: React.FC = () => {
+// Main Page
+const Stories: React.FC = () => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -62,52 +56,44 @@ const Club: React.FC = () => {
   const [editId, setEditId] = useState<string | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
-  const [isAddMode, setIsAddMode] = useState(false); // NEW: tracks add mode
+  const [isAddMode, setIsAddMode] = useState(false);
 
   // Query params for pagination and search
   const query: Record<string, any> = { page, limit };
   if (search.trim()) query.searchTerm = search;
 
-  // API hooks from clubSlice.ts
-  const { data, isLoading, refetch } = useGetClubsQuery({ query });
-  const [createClub, { isLoading: createLoading }] = useCreateClubMutation();
-  const [updateClub, { isLoading: updateLoading }] = useUpdateClubMutation();
-  const [deleteClub, { isLoading: deleteLoading }] = useDeleteClubMutation();
+  // API hooks from storiesSlice.ts
+  const { data, isLoading, refetch } = useGetStoriesQuery({ query });
+  const [createStory, { isLoading: createLoading }] = useCreateStoryMutation();
+  const [updateStory, { isLoading: updateLoading }] = useUpdateStoryMutation();
+  const [deleteStory, { isLoading: deleteLoading }] = useDeleteStoryMutation();
 
   // Get details for view modal
-  const {  data: clubDetails } = useGetClubDetailsQuery(viewId!, {
-    skip: !viewOpen || !viewId
+  const { data: storyDetails } = useGetStoryDetailsQuery(viewId ?? "", {
+    skip: !viewOpen || !viewId,
   });
 
   // Get details for edit modal
   const {
-    data: editClubDetails,
-    isLoading: editLoading
-  } = useGetClubDetailsQuery(editId!, {
-    skip: !formOpen || !editId
+    data: editStoryDetails,
+    isLoading: editLoading,
+  } = useGetStoryDetailsQuery(editId ?? "", {
+    skip: !formOpen || !editId,
   });
 
-  const columns: TableColumnsType<ClubType> = useMemo(
+  // Columns for Table
+  const columns: TableColumnsType<StoryType> = useMemo(
     () => [
-      {
-        title: "Sl",
-        dataIndex: "sl",
-        key: "sl",
-        align: "center",
-        width: 64,
-        render: (_: any, __: any, index: number) => {
-          const serial = (page - 1) * limit + index + 1;
-          return <span>#{serial < 10 ? `0${serial}` : serial}</span>;
-        },
-      },
       {
         title: "Image",
         dataIndex: "image",
-        render: (src: string) =>
-          src ? (
+        width: 150,
+        render: (_: any, record: StoryType) => {
+          const src = record.image;
+          return src ? (
             <img
               src={`${imageUrl}${src}`}
-              alt="club"
+              alt="story"
               style={{
                 height: 48,
                 width: 48,
@@ -117,11 +103,12 @@ const Club: React.FC = () => {
             />
           ) : (
             <span style={{ color: "#ccc" }}>No image</span>
-          ),
+          );
+        },
       },
       {
-        title: "Name",
-        dataIndex: "name",
+        title: "Title",
+        dataIndex: "title",
         render: (v: string) => (
           <Text strong style={{ fontSize: 16 }}>
             {v}
@@ -129,15 +116,21 @@ const Club: React.FC = () => {
         ),
       },
       {
-        title: "Members",
-        dataIndex: "numberOfMembers",
-        render: (_: number, record: ClubType) => {
-          return (
-            <span>
-               {record.limitOfMember < 10 ? `0${record.limitOfMember}` : record.limitOfMember}
-            </span>
-          );
-        },
+        title: "Club Name",
+        dataIndex: ["club", "name"],
+        render: (_: any, record: StoryType) =>
+          record.club?.name || <span style={{ color: "#aaa" }}>-</span>,
+      },
+      {
+        title: "Likes",
+        dataIndex: "likeCount",
+        render: (v: number) => v ?? 0,
+      },
+      {
+        title: "Created",
+        dataIndex: "createdAt",
+        render: (v: string) =>
+          v ? new Date(v).toLocaleString() : "-",
       },
       {
         title: "Action",
@@ -172,11 +165,11 @@ const Club: React.FC = () => {
             </Tooltip>
             <Tooltip title="Delete">
               <Popconfirm
-                title="Delete this club?"
+                title="Delete this story?"
                 okText="Delete"
                 okType="danger"
                 onConfirm={async () => {
-                  await deleteClub(record._id).unwrap();
+                  await deleteStory(record._id).unwrap();
                   message.success("Deleted");
                   refetch();
                 }}
@@ -204,81 +197,87 @@ const Club: React.FC = () => {
     },
   };
 
-  // Filter to only display club objects with necessary fields:
-  const formatClubData = (rawData: any[] = []) => {
-    return rawData.map((club) => ({
-      _id: club._id,
-      image: club.image,
-      name: club.name,
-      limitOfMember: club.limitOfMember,
-      numberOfMembers: club.numberOfMembers,
-      location: club.location,
-      description: club.description,
-      active: club.active,
-      createdAt: club.createdAt,
-      updatedAt: club.updatedAt,
+  // Transform raw stories data to StoryType[]
+  const formatStoryData = (rawData: any[] = []) => {
+    return rawData.map((story) => ({
+      _id: story._id,
+      title: story.title,
+      image: story.image,
+      club: story.club,
+      likeCount: story.likeCount,
+      createdAt: story.createdAt,
+      description: story.description,
+      updatedAt: story.updatedAt,
     }));
+  };
+
+  // Map API detail to modal prop
+  const getStoryInfoForModal = () => {
+    if (storyDetails && storyDetails.data) {
+      const d = storyDetails.data;
+      // This returns all details required for StoryInfoModal
+      return {
+        _id: d._id,
+        title: d.title,
+        description: d.description,
+        image: d.image,
+        club: d.club,
+        likeCount: d.likeCount,
+        createdAt: d.createdAt,
+        updatedAt: d.updatedAt,
+      };
+    }
+    return null;
+  };
+
+  // Map API detail to edit modal
+  const getEditStoryInfoForModal = () => {
+    if (formOpen && editStoryDetails && editStoryDetails.data && !isAddMode) {
+      const d = editStoryDetails.data;
+      return {
+        _id: d._id,
+        name: d.title,
+        club: d.club,
+        image: d.image,
+        description: d.description,
+      };
+    }
+    return null;
   };
 
   return (
     <EditorProvider>
       <div>
         {/* Modals */}
-        <ClubInfoModel
+        <StoryInfoModal
           open={viewOpen}
-          club={
-            viewOpen && clubDetails && clubDetails.data
-              ? {
-                  _id: clubDetails.data._id,
-                  image: clubDetails.data.image,
-                  name: clubDetails.data.name,
-                  limitOfMember: clubDetails.data.limitOfMember,
-                  numberOfMembers: clubDetails.data.numberOfMembers,
-                  location: clubDetails.data.location,
-                  description: clubDetails.data.description,
-                }
-              : null
-          }
+          story={getStoryInfoForModal()}
           onClose={() => {
             setViewOpen(false);
             setViewId(null);
           }}
         />
 
-        <ClubModel
+        <StoryModal
           open={formOpen}
           loading={createLoading || updateLoading || editLoading}
-          editClub={
-            isAddMode
-              ? null
-              : formOpen && editClubDetails && editClubDetails.data
-              ? {
-                  _id: editClubDetails.data._id,
-                  name: editClubDetails.data.name,
-                  location: editClubDetails.data.location,
-                  image: editClubDetails.data.image,
-                  limitOfMember: editClubDetails.data.limitOfMember,
-                  numberOfMembers: editClubDetails.data.numberOfMembers,
-                  description: editClubDetails.data.description,
-                }
-              : null
-          }
+          editClub={isAddMode ? null : getEditStoryInfoForModal()}
           onClose={() => {
             setFormOpen(false);
             setEditId(null);
             setIsAddMode(false);
           }}
-          onAdd={async (formData) => {
-            await createClub(formData).unwrap();
-            message.success("Club added");
+          onAdd={async (formData: any) => {
+            await createStory(formData).unwrap();
+            message.success("Story added");
             setFormOpen(false);
             setEditId(null);
             setIsAddMode(false);
             refetch();
           }}
-          onUpdate={async (id, formData) => {
-            await updateClub({ id, data: formData }).unwrap();
-            message.success("Club updated");
+          onUpdate={async (id: string, formData: any) => {
+            await updateStory({ id, data: formData }).unwrap();
+            message.success("Story updated");
             setFormOpen(false);
             setEditId(null);
             setIsAddMode(false);
@@ -299,7 +298,7 @@ const Club: React.FC = () => {
             <Input
               prefix={<FiSearch style={{ fontSize: 16, color: "#8c8c8c" }} />}
               type="text"
-              placeholder="Search clubs"
+              placeholder="Search stories"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -324,7 +323,7 @@ const Club: React.FC = () => {
                 setIsAddMode(true);
               }}
             >
-              Add Club
+              Add Story
             </Button>
           </div>
         </div>
@@ -334,13 +333,15 @@ const Club: React.FC = () => {
           <Table
             rowKey="_id"
             style={{ overflowX: "auto", marginTop: 20 }}
-            dataSource={formatClubData(data?.data)}
+            dataSource={formatStoryData(data?.data)}
             columns={columns as any}
             className="event-table-custom-gray event-table-gray-row-border"
             pagination={pagination}
             loading={isLoading}
             scroll={
-              window.innerWidth < 600 ? undefined : { y: `calc(100vh - 320px)` }
+              typeof window !== "undefined" && window.innerWidth < 600
+                ? undefined
+                : { y: `calc(100vh - 320px)` }
             }
           />
         </Spin>
@@ -349,4 +350,4 @@ const Club: React.FC = () => {
   );
 };
 
-export default Club;
+export default Stories;

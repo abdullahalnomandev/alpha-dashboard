@@ -10,41 +10,38 @@ import {
   Popconfirm,
   Tooltip,
 } from "antd";
-
 import type { TableColumnsType, TablePaginationConfig } from "antd";
 import { FiEdit, FiSearch } from "react-icons/fi";
 import {
   EyeOutlined,
   PlusOutlined,
-  DeleteOutlined
+  DeleteOutlined,
 } from "@ant-design/icons";
 
 import {
-  useGetClubsQuery,
-  useGetClubDetailsQuery,
-  useCreateClubMutation,
-  useUpdateClubMutation,
-  useDeleteClubMutation,
-} from "../../redux/apiSlices/clubSlice";
+  useGetSponsorsQuery,
+  useGetSponsorDetailsQuery,
+  useCreateSponsorMutation,
+  useUpdateSponsorMutation,
+  useDeleteSponsorMutation,
+} from "../../redux/apiSlices/sponsors";
 import { imageUrl } from "../../redux/api/baseApi";
 import { EditorProvider } from "react-simple-wysiwyg";
-import { ClubInfoModel } from "./ClubInfoModel";
-import { ClubModel } from "./ClubModel";
+import { SponsorModel } from "./SponsorModel";
+import { SponsorInfoModel } from "./SponsorInfoModel";
 
 const { Text } = Typography;
 
-/* =====================
-   Types
-===================== */
-export type ClubType = {
+// =====================
+// Types
+// =====================
+export type SponsorType = {
   _id: string;
-  image: string;
-  name: string;
-  limitOfMember: number;
-  numberOfMembers: number;
+  logo?: string;
+  title: string;
   location?: string;
   description?: string;
-  active?: boolean;
+  image?: string;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -52,7 +49,7 @@ export type ClubType = {
 /* =====================
    Main Page
 ===================== */
-const Club: React.FC = () => {
+const Sponsor: React.FC = () => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -62,52 +59,44 @@ const Club: React.FC = () => {
   const [editId, setEditId] = useState<string | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
-  const [isAddMode, setIsAddMode] = useState(false); // NEW: tracks add mode
+  const [isAddMode, setIsAddMode] = useState(false);
+
+  // Track modal key to force a remount for 'add' for clean form
+  const [formModalKey, setFormModalKey] = useState<number>(0);
 
   // Query params for pagination and search
   const query: Record<string, any> = { page, limit };
   if (search.trim()) query.searchTerm = search;
 
-  // API hooks from clubSlice.ts
-  const { data, isLoading, refetch } = useGetClubsQuery({ query });
-  const [createClub, { isLoading: createLoading }] = useCreateClubMutation();
-  const [updateClub, { isLoading: updateLoading }] = useUpdateClubMutation();
-  const [deleteClub, { isLoading: deleteLoading }] = useDeleteClubMutation();
+  // API hooks from sponsors.ts
+  const { data, isLoading, refetch } = useGetSponsorsQuery({ query });
+  const [createSponsor, { isLoading: createLoading }] = useCreateSponsorMutation();
+  const [updateSponsor, { isLoading: updateLoading }] = useUpdateSponsorMutation();
+  const [deleteSponsor, { isLoading: deleteLoading }] = useDeleteSponsorMutation();
 
   // Get details for view modal
-  const {  data: clubDetails } = useGetClubDetailsQuery(viewId!, {
-    skip: !viewOpen || !viewId
+  const { data: sponsorDetails } = useGetSponsorDetailsQuery(viewId!, {
+    skip: !viewOpen || !viewId,
   });
 
   // Get details for edit modal
   const {
-    data: editClubDetails,
-    isLoading: editLoading
-  } = useGetClubDetailsQuery(editId!, {
-    skip: !formOpen || !editId
+    data: editSponsorDetails,
+    isLoading: editLoading,
+  } = useGetSponsorDetailsQuery(editId!, {
+    skip: !formOpen || !editId || isAddMode,
   });
 
-  const columns: TableColumnsType<ClubType> = useMemo(
+  const columns: TableColumnsType<SponsorType> = useMemo(
     () => [
       {
-        title: "Sl",
-        dataIndex: "sl",
-        key: "sl",
-        align: "center",
-        width: 64,
-        render: (_: any, __: any, index: number) => {
-          const serial = (page - 1) * limit + index + 1;
-          return <span>#{serial < 10 ? `0${serial}` : serial}</span>;
-        },
-      },
-      {
-        title: "Image",
-        dataIndex: "image",
+        title: "Logo",
+        dataIndex: "logo",
         render: (src: string) =>
           src ? (
             <img
               src={`${imageUrl}${src}`}
-              alt="club"
+              alt="sponsor"
               style={{
                 height: 48,
                 width: 48,
@@ -116,12 +105,12 @@ const Club: React.FC = () => {
               }}
             />
           ) : (
-            <span style={{ color: "#ccc" }}>No image</span>
+            <span style={{ color: "#ccc" }}>No logo</span>
           ),
       },
       {
-        title: "Name",
-        dataIndex: "name",
+        title: "Title",
+        dataIndex: "title",
         render: (v: string) => (
           <Text strong style={{ fontSize: 16 }}>
             {v}
@@ -129,15 +118,10 @@ const Club: React.FC = () => {
         ),
       },
       {
-        title: "Members",
-        dataIndex: "numberOfMembers",
-        render: (_: number, record: ClubType) => {
-          return (
-            <span>
-               {record.limitOfMember < 10 ? `0${record.limitOfMember}` : record.limitOfMember}
-            </span>
-          );
-        },
+        title: "Location",
+        dataIndex: "location",
+        render: (v: string) =>
+          v && v.trim().length > 0 ? v : <span style={{ color: "#aaa" }}>No location</span>,
       },
       {
         title: "Action",
@@ -165,6 +149,7 @@ const Club: React.FC = () => {
                   setEditId(record._id);
                   setIsAddMode(false);
                   setFormOpen(true);
+                  setFormModalKey(prev => prev + 1); // re-render to keep edit form fresh if row changes
                 }}
               >
                 <FiEdit />
@@ -172,11 +157,11 @@ const Club: React.FC = () => {
             </Tooltip>
             <Tooltip title="Delete">
               <Popconfirm
-                title="Delete this club?"
+                title="Delete this sponsor?"
                 okText="Delete"
                 okType="danger"
                 onConfirm={async () => {
-                  await deleteClub(record._id).unwrap();
+                  await deleteSponsor(record._id).unwrap();
                   message.success("Deleted");
                   refetch();
                 }}
@@ -204,19 +189,17 @@ const Club: React.FC = () => {
     },
   };
 
-  // Filter to only display club objects with necessary fields:
-  const formatClubData = (rawData: any[] = []) => {
-    return rawData.map((club) => ({
-      _id: club._id,
-      image: club.image,
-      name: club.name,
-      limitOfMember: club.limitOfMember,
-      numberOfMembers: club.numberOfMembers,
-      location: club.location,
-      description: club.description,
-      active: club.active,
-      createdAt: club.createdAt,
-      updatedAt: club.updatedAt,
+  // Filter and format sponsor objects with necessary fields:
+  const formatSponsorData = (rawData: any[] = []) => {
+    return rawData.map((sponsor) => ({
+      _id: sponsor._id,
+      logo: sponsor.logo,
+      title: sponsor.title,
+      location: sponsor.location,
+      description: sponsor.description,
+      image: sponsor.image,
+      createdAt: sponsor.createdAt,
+      updatedAt: sponsor.updatedAt,
     }));
   };
 
@@ -224,18 +207,16 @@ const Club: React.FC = () => {
     <EditorProvider>
       <div>
         {/* Modals */}
-        <ClubInfoModel
+        <SponsorInfoModel
           open={viewOpen}
-          club={
-            viewOpen && clubDetails && clubDetails.data
+          sponsor={
+            viewOpen && sponsorDetails && sponsorDetails.data
               ? {
-                  _id: clubDetails.data._id,
-                  image: clubDetails.data.image,
-                  name: clubDetails.data.name,
-                  limitOfMember: clubDetails.data.limitOfMember,
-                  numberOfMembers: clubDetails.data.numberOfMembers,
-                  location: clubDetails.data.location,
-                  description: clubDetails.data.description,
+                  _id: sponsorDetails.data._id,
+                  title: sponsorDetails.data.title,
+                  location: sponsorDetails.data.location,
+                  description: sponsorDetails.data.description,
+                  logo: sponsorDetails.data.logo,
                 }
               : null
           }
@@ -245,22 +226,30 @@ const Club: React.FC = () => {
           }}
         />
 
-        <ClubModel
+        <SponsorModel
+          key={formModalKey}
           open={formOpen}
           loading={createLoading || updateLoading || editLoading}
-          editClub={
+          editSponsor={
             isAddMode
               ? null
-              : formOpen && editClubDetails && editClubDetails.data
-              ? {
-                  _id: editClubDetails.data._id,
-                  name: editClubDetails.data.name,
-                  location: editClubDetails.data.location,
-                  image: editClubDetails.data.image,
-                  limitOfMember: editClubDetails.data.limitOfMember,
-                  numberOfMembers: editClubDetails.data.numberOfMembers,
-                  description: editClubDetails.data.description,
-                }
+              : formOpen && editSponsorDetails && editSponsorDetails.data
+              ? (() => {
+                  // sow log inserted image jsut
+                  // This will log the image field if present, as per the spec
+                  // eslint-disable-next-line no-console
+                  console.log("Inserted image value just", editSponsorDetails.data.image);
+                  return {
+                    _id: editSponsorDetails.data._id,
+                    title: editSponsorDetails.data.title,
+                    location: editSponsorDetails.data.location,
+                    logo: editSponsorDetails.data.logo,
+                    image: editSponsorDetails.data.image,
+                    description: editSponsorDetails.data.description,
+                    createdAt: editSponsorDetails.data.createdAt,
+                    updatedAt: editSponsorDetails.data.updatedAt,
+                  };
+                })()
               : null
           }
           onClose={() => {
@@ -269,16 +258,16 @@ const Club: React.FC = () => {
             setIsAddMode(false);
           }}
           onAdd={async (formData) => {
-            await createClub(formData).unwrap();
-            message.success("Club added");
+            await createSponsor(formData).unwrap();
+            message.success("Sponsor added");
             setFormOpen(false);
             setEditId(null);
             setIsAddMode(false);
             refetch();
           }}
           onUpdate={async (id, formData) => {
-            await updateClub({ id, data: formData }).unwrap();
-            message.success("Club updated");
+            await updateSponsor({ id, formData }).unwrap();
+            message.success("Sponsor updated");
             setFormOpen(false);
             setEditId(null);
             setIsAddMode(false);
@@ -299,7 +288,7 @@ const Club: React.FC = () => {
             <Input
               prefix={<FiSearch style={{ fontSize: 16, color: "#8c8c8c" }} />}
               type="text"
-              placeholder="Search clubs"
+              placeholder="Search sponsors"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -319,12 +308,16 @@ const Club: React.FC = () => {
               }}
               size="large"
               onClick={() => {
-                setFormOpen(true);
-                setEditId(null);
-                setIsAddMode(true);
+                setFormOpen(false);
+                setTimeout(() => {
+                  setIsAddMode(true);
+                  setEditId(null);
+                  setFormModalKey(prev => prev + 1);
+                  setFormOpen(true);
+                }, 0);
               }}
             >
-              Add Club
+              Add Sponsor
             </Button>
           </div>
         </div>
@@ -334,7 +327,7 @@ const Club: React.FC = () => {
           <Table
             rowKey="_id"
             style={{ overflowX: "auto", marginTop: 20 }}
-            dataSource={formatClubData(data?.data)}
+            dataSource={formatSponsorData(data?.data)}
             columns={columns as any}
             className="event-table-custom-gray event-table-gray-row-border"
             pagination={pagination}
@@ -349,4 +342,4 @@ const Club: React.FC = () => {
   );
 };
 
-export default Club;
+export default Sponsor;
