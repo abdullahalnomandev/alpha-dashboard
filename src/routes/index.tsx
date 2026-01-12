@@ -9,15 +9,27 @@ import NotificationPage from "../pages/notificationPage";
 import ResetPassword from "../component/resetPassword";
 import Editor from "react-simple-wysiwyg";
 
-// Dynamically create children routes from MENU_CONFIG, skipping dashboard ("/")
-const dynamicChildren = MENU_CONFIG.filter((item) => item.path !== "/").map(
-  (item) => ({
-    path: item.path.replace(/^\//, ""), // remove leading slash for react-router children
-    element: item.element,
-  })
-);
 
+function extractRoutes(menu: typeof MENU_CONFIG = MENU_CONFIG) {
+  const routes: Array<{ path: string; element: React.ReactNode }> = [];
+  function recurse(items: any[]) {
+    for (const item of items) {
+      if (item.children && item.children.length > 0) {
+        recurse(item.children);
+      } else if (item.path && item.element) {
+        routes.push({
+          path: item.path.replace(/^\//, ""),
+          element: item.element,
+        });
+      }
+    }
+  }
+  // We will skip the root dashboard ("/") since it's handled as index
+  recurse(menu.filter((item) => item.path !== "/"));
+  return routes;
+}
 
+const dynamicChildren = extractRoutes(MENU_CONFIG);
 
 export const router = createBrowserRouter([
   {
@@ -35,7 +47,7 @@ export const router = createBrowserRouter([
   {
     path: "/test",
     element: (
-      <Editor >
+      <Editor>
       </Editor>
     ),
   },
@@ -52,11 +64,11 @@ export const router = createBrowserRouter([
         element: MENU_CONFIG.find((item) => item.path === "/")?.element,
       },
       {
-        path: "/profile",
+        path: "profile",
         element: <ProfilePage />,
       },
       {
-        path: "/notifications",
+        path: "notifications",
         element: <NotificationPage />,
       },
       ...dynamicChildren,

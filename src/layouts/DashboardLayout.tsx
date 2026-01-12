@@ -20,18 +20,36 @@ import logo from '../assets/alpha_logo.svg'
 const { Sider, Header, Content } = Layout;
 const { Text } = Typography;
 
-function getMenuItem(
-  label: React.ReactNode,
-  key: string,
-  icon?: React.ReactNode,
-  children?: MenuProps["items"]
-): Required<MenuProps>["items"][number] {
-  return {
-    key,
-    icon,
-    children,
-    label,
-  };
+/**
+ * Recursively convert MENU_CONFIG into Antd Menu.items format, supporting submenus (children).
+ */
+function convertMenuConfigToMenuItems(config: any[]): MenuProps["items"] {
+  return config.map((item) => {
+    if (item.children && Array.isArray(item.children)) {
+      return {
+        key: item.key,
+        icon: item.icon,
+        label: item.label,
+        children: convertMenuConfigToMenuItems(item.children),
+      };
+    }
+    return {
+      key: item.key,
+      icon: item.icon,
+      label: item.label,
+    };
+  });
+}
+
+// Key/path lookup helpers – flatten all menu items for easy lookup
+function flattenMenuConfig(menuConfig: any[]): any[] {
+  let flat: any[] = [];
+  for (const item of menuConfig) {
+    flat.push(item);
+    if (item.children && Array.isArray(item.children))
+      flat = flat.concat(flattenMenuConfig(item.children));
+  }
+  return flat;
 }
 
 const LOGOUT_ITEM = {
@@ -40,53 +58,155 @@ const LOGOUT_ITEM = {
   icon: <LogoutOutlined style={{ color: "red" }} />,
 };
 
-const menuItems: MenuProps["items"] = MENU_CONFIG.map((item) =>
-  getMenuItem(item.label, item.key, item.icon)
-);
+const menuItems: MenuProps["items"] = convertMenuConfigToMenuItems(MENU_CONFIG);
 
 const logoutMenuItem: MenuProps["items"] = [
-  getMenuItem(LOGOUT_ITEM.label, LOGOUT_ITEM.key, LOGOUT_ITEM.icon),
+  {
+    key: LOGOUT_ITEM.key,
+    label: LOGOUT_ITEM.label,
+    icon: LOGOUT_ITEM.icon,
+  },
 ];
 
-// Dynamically generate the key to path mapping
-const keyToPath: Record<string, string | undefined> = MENU_CONFIG.reduce(
-  (acc, cur) => {
-    if (cur.path) acc[cur.key] = cur.path;
-    return acc;
-  },
-  {} as Record<string, string>
-);
+// Build key-path lookup from all nested menu items
+const allMenuItemsFlat = flattenMenuConfig(MENU_CONFIG);
+
+// Build key-to-path mapping (only for items with 'path')
+const keyToPath: Record<string, string | undefined> = {};
+for (const item of allMenuItemsFlat) {
+  if (item.path) keyToPath[item.key] = item.path;
+}
 
 const logoutKey = LOGOUT_ITEM.key;
 
 const siderWidth = 240;
 
-const getSelectedKey = (pathname: string): string => {
-  // Try to find an exact match
-  let found = MENU_CONFIG.find((item) => item.path && item.path === pathname);
-  if (found) return found.key;
+// function findMenuItemByPath(menuConfig: any[], pathname: string): string | null {
+//   // search recursively for matching (exact or prefix) path
+//   let matched: string | null = null;
+//   function dfs(items: any[]) {
+//     for (let item of items) {
+//       if (item.path && item.path === pathname) {
+//         matched = item.key;
+//         return;
+//       }
+//       if (item.children) dfs(item.children);
+//     }
+//   }
+//   dfs(menuConfig);
+//   if (matched) return matched;
 
-  // Try to find a prefix match for non-root
-  found = MENU_CONFIG.find(
-    (item) => item.path && item.path !== "/" && pathname.startsWith(item.path)
-  );
-  if (found) return found.key;
+//   // fallback to prefix match (for nested)
+//   function dfsPrefix(items: any[]) {
+//     for (let item of items) {
+//       if (item.path && item.path !== "/" && pathname.startsWith(item.path)) {
+//         matched = item.key;
+//         return;
+//       }
+//       if (item.children) dfsPrefix(item.children);
+//     }
+//   }
+//   dfsPrefix(menuConfig);
+//   if (matched) return matched;
 
-  // If root and menu contains '/', use it
-  found = MENU_CONFIG.find((item) => item.path === "/");
-  if (pathname === "/" && found) return found.key;
+//   // check '/' at root
+//   function dfsRoot(items: any[]) {
+//     for (let item of items) {
+//       if (item.path === "/" && pathname === "/") {
+//         matched = item.key;
+//         return;
+//       }
+//       if (item.children) dfsRoot(item.children);
+//     }
+//   }
+//   dfsRoot(menuConfig);
+//   if (matched) return matched;
 
-  // Fallback: try to find the first defined path that matches at least leading slash
-  found = MENU_CONFIG.find(
-    (item) => item.path && pathname.startsWith(item.path)
-  );
-  if (found) return found.key;
+//   // fallback: any prefix
+//   function dfsAnyPrefix(items: any[]) {
+//     for (let item of items) {
+//       if (item.path && pathname.startsWith(item.path)) {
+//         matched = item.key;
+//         return;
+//       }
+//       if (item.children) dfsAnyPrefix(item.children);
+//     }
+//   }
+//   dfsAnyPrefix(menuConfig);
+//   if (matched) return matched;
 
-  // Otherwise fallback to first entry
-  return MENU_CONFIG[0]?.key ?? "";
-};
+//   // fallback: first item's key (if present)
+//   return menuConfig[0]?.key ?? "";
+// }
 
-// -- Responsive: helper hook --
+// Returns array of selected keys by finding the deepest match for current path
+function findSelectedMenuKeys(menuConfig: any[], pathname: string): string[] {
+  // Returns array of keys from root to matched menu (for openKeys/selectedKeys)
+  let result: string[] = [];
+  function dfs(items: any[], parents: string[]) {
+    for (let item of items) {
+      let p = [...parents, item.key];
+      if (item.path && item.path === pathname) {
+        result = p;
+        return true;
+      }
+      if (item.children) {
+        if (dfs(item.children, p)) return true;
+      }
+    }
+    return false;
+  }
+  if (dfs(menuConfig, [])) return result;
+  // Try prefix (non-root)
+  function dfsPrefix(items: any[], parents: string[]) {
+    for (let item of items) {
+      let p = [...parents, item.key];
+      if (item.path && item.path !== "/" && pathname.startsWith(item.path)) {
+        result = p;
+        return true;
+      }
+      if (item.children) {
+        if (dfsPrefix(item.children, p)) return true;
+      }
+    }
+    return false;
+  }
+  if (dfsPrefix(menuConfig, [])) return result;
+  // Check root
+  function dfsRoot(items: any[], parents: string[]) {
+    for (let item of items) {
+      let p = [...parents, item.key];
+      if (item.path === "/" && pathname === "/") {
+        result = p;
+        return true;
+      }
+      if (item.children) {
+        if (dfsRoot(item.children, p)) return true;
+      }
+    }
+    return false;
+  }
+  if (dfsRoot(menuConfig, [])) return result;
+  // Any prefix
+  function dfsAnyPrefix(items: any[], parents: string[]) {
+    for (let item of items) {
+      let p = [...parents, item.key];
+      if (item.path && pathname.startsWith(item.path)) {
+        result = p;
+        return true;
+      }
+      if (item.children) {
+        if (dfsAnyPrefix(item.children, p)) return true;
+      }
+    }
+    return false;
+  }
+  if (dfsAnyPrefix(menuConfig, [])) return result;
+  // fallback: root level
+  return [menuConfig[0]?.key ?? ""];
+}
+
+// Responsive: helper hook
 function useIsMobile(breakpoint: number = 768): boolean {
   const [isMobile, setIsMobile] = React.useState(
     typeof window !== "undefined" ? window.innerWidth < breakpoint : false
@@ -106,27 +226,50 @@ const DashboardLayout: React.FC = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const selectedKey = React.useMemo(
-    () => getSelectedKey(location.pathname),
+  const selectedMenuKeys = React.useMemo(
+    () => findSelectedMenuKeys(MENU_CONFIG, location.pathname),
     [location.pathname]
   );
+  const selectedKey = selectedMenuKeys.length
+    ? selectedMenuKeys[selectedMenuKeys.length - 1]
+    : "";
+
   const isMobile = useIsMobile();
   const [drawerOpen, setDrawerOpen] = React.useState(false);
 
+  // OpenKeys state for submenu management
+  // Use controlled openKeys with proper onOpenChange for Sider menu (desktop)
+  // But NOT for Drawer/mobile, since closing the drawer resets everything anyway
+  const [openKeys, setOpenKeys] = React.useState<string[]>(
+    selectedMenuKeys.length > 1 ? selectedMenuKeys.slice(0, -1) : []
+  );
+
+  // Keep openKeys in sync with the current selected route (except for mobile/drawer)
+  React.useEffect(() => {
+    if (!isMobile) {
+      setOpenKeys(selectedMenuKeys.length > 1 ? selectedMenuKeys.slice(0, -1) : []);
+    }
+  }, [selectedMenuKeys, isMobile]);
+
+  // handle menu click (works with submenu too)
   const handleMenuClick: MenuProps["onClick"] = (info) => {
     const path = keyToPath[info.key];
     if (path !== undefined) {
       navigate(path);
       setDrawerOpen(false);
     }
-    // For logout and other actions, implement as needed here
+    // For logout etc., handled separately
   };
 
   const handleLogoutClick: MenuProps["onClick"] = () => {
     handleLogout();
   };
 
+  // Submenu open change handler for desktop (Sider), enables submenu toggling
+  const onMenuOpenChange = (keys: string[]) => setOpenKeys(keys);
+
   // --- SIDER CONTENT FACTORY ---
+  // For Drawer/mobile, fallback to auto-controlled openKeys (AntD default, so omit openKeys prop)
   const SidebarContent = (
     <div
       style={{
@@ -135,10 +278,6 @@ const DashboardLayout: React.FC = () => {
         height: `calc(100% - ${isMobile ? 129 : 140}px)`,
         overflow: "auto",
         minHeight: 0,
-        // background: "red",
-        // background: "#FBFBFB",
-        // marginTop: isMobile ? 0 : 10,
-        // borderTopRightRadius: isMobile ? 0 : 10,
       }}
     >
       {/* Main navigation menu, grow to take up space */}
@@ -152,7 +291,13 @@ const DashboardLayout: React.FC = () => {
       >
         <Menu
           mode="inline"
-          selectedKeys={[selectedKey]}
+          selectedKeys={selectedMenuKeys}
+          {...(isMobile
+            ? {}
+            : {
+                openKeys: openKeys,
+                onOpenChange: onMenuOpenChange,
+              })}
           items={menuItems}
           style={{
             borderInline: 0,
@@ -166,6 +311,25 @@ const DashboardLayout: React.FC = () => {
       </div>
     </div>
   );
+
+  // Find the label for the header (by selected key, recursively)
+  function getHeaderLabelByKey(menuConfig: any[], key: string): React.ReactNode {
+    let result: React.ReactNode = "";
+    function dfs(items: any[]) {
+      for (let item of items) {
+        if (item.key === key) {
+          result = item.label;
+          return true;
+        }
+        if (item.children) {
+          if (dfs(item.children)) return true;
+        }
+      }
+      return false;
+    }
+    dfs(menuConfig);
+    return result;
+  }
 
   return (
     <Layout
@@ -194,14 +358,11 @@ const DashboardLayout: React.FC = () => {
                 display: "flex",
                 alignItems: "center",
                 paddingInline: 24,
-                // borderBottom: "1px solid red",
-                // color: "#e5e7eb",
                 fontWeight: 600,
                 fontSize: 18,
                 letterSpacing: 1,
                 flexShrink: 0,
-                // borderBottomRightRadius: 10,
-                justifyContent: "center", // Center the logo horizontally
+                justifyContent: "center",
               }}
             >
               <Link
@@ -230,7 +391,6 @@ const DashboardLayout: React.FC = () => {
             <div
               style={{
                 flexShrink: 0,
-                // no paddingBottom needed for mobile
               }}
             >
               <Menu
@@ -270,9 +430,8 @@ const DashboardLayout: React.FC = () => {
               display: "flex",
               alignItems: "center",
               paddingInline: 24,
-              // borderBottom: "1px solid red",
               flexShrink: 0,
-              justifyContent: "center", // center the logo horizontally
+              justifyContent: "center",
             }}
           >
             <Link
@@ -329,12 +488,10 @@ const DashboardLayout: React.FC = () => {
             left: isMobile ? 0 : siderWidth,
             right: 0,
             top: 0,
-            background: "#fff", // Make header background light
+            background: "#fff",
             color: "black",
             zIndex: 101,
             paddingInline: isMobile ? 12 : 32,
-            // borderBottom: "1px solid #e5e7eb", // Softer light border
-            // borderBottom: "1px solid red", // Softer light border
             marginBottom: 10,
             display: "flex",
             height: 64,
@@ -363,16 +520,12 @@ const DashboardLayout: React.FC = () => {
             {/* Dynamically show selected menu label as header */}
             <Text
               style={{
-                color: "#222", // Dark text for light bg
+                color: "#222",
                 fontSize: isMobile ? 18 : 22,
                 fontWeight: 600,
               }}
             >
-              {
-                // Try to get selected item's label for header
-                MENU_CONFIG.find((item) => item.key === selectedKey)?.label ??
-                  ""
-              }
+              {getHeaderLabelByKey(MENU_CONFIG, selectedKey) ?? ""}
             </Text>
           </div>
           <div
@@ -420,10 +573,8 @@ const DashboardLayout: React.FC = () => {
         {/* Main Content Padding for fixed header */}
         <Content
           style={{
-            // margin: 10,
-            marginTop: 60, // 64px header + 10px margin
+            marginTop: 60,
             backgroundColor: "#f9fafb",
-            // borderRadius: 10,
             padding: isMobile ? 12 : 24,
             minHeight: `calc(100vh - 74px)`,
             transition: "padding 0.2s",

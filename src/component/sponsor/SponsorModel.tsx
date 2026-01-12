@@ -1,53 +1,8 @@
 import { Button, Form, Input, Modal, Upload, Row, Col } from "antd";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import Editor from "react-simple-wysiwyg";
 import { UploadOutlined } from "@ant-design/icons";
 import { imageUrl } from "../../redux/api/baseApi";
-
-// Add a simple Google Places Autocomplete input component.
-const GooglePlacesAutocomplete: React.FC<{
-  value?: string;
-  onChange: (address: string) => void;
-  placeholder?: string;
-}> = ({ value = "", onChange, placeholder }) => {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    // @ts-ignore
-    if (!window.google || !window.google.maps || !window.google.maps.places) return;
-    if (!inputRef.current) return;
-
-    // @ts-ignore
-    const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
-      types: ["(cities)"], // You can change to e.g. ["geocode"]
-      fields: ["formatted_address", "geometry", "name"]
-    });
-
-    autocomplete.addListener("place_changed", () => {
-      const place = autocomplete.getPlace();
-      if (place && place.formatted_address) {
-        onChange(place.formatted_address);
-      } else if (place && place.name) {
-        onChange(place.name);
-      }
-    });
-
-    // Clean up
-    return () => {
-      // no direct way to remove .addListener, so rely on input unmount
-    };
-  }, [onChange]);
-
-  return (
-    <Input
-      ref={inputRef}
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      placeholder={placeholder}
-      autoComplete="off"
-    />
-  );
-};
 
 export const SponsorModel: React.FC<{
   open: boolean;
@@ -71,15 +26,14 @@ export const SponsorModel: React.FC<{
   const [imageFileList, setImageFileList] = useState<any[]>([]);
   const [logoFileList, setLogoFileList] = useState<any[]>([]);
   const [html, setHtml] = useState<string>("");
-  const [location, setLocation] = useState<string>("");
 
   // Populate form fields on edit
   useEffect(() => {
     if (editSponsor) {
       form.setFieldsValue({
         title: editSponsor.title || "",
+        location: editSponsor.location || "",
       });
-      setLocation(editSponsor.location || "");
       setHtml(editSponsor.description || "");
       setImageFileList([]);
       setLogoFileList([]);
@@ -87,7 +41,6 @@ export const SponsorModel: React.FC<{
       setImageFileList([]);
       setLogoFileList([]);
       form.resetFields();
-      setLocation("");
       setHtml("");
     }
     // eslint-disable-next-line
@@ -129,8 +82,9 @@ export const SponsorModel: React.FC<{
     if ("title" in values) {
       formData.append("title", values.title);
     }
-    // For location, use the controlled input
-    formData.append("location", location);
+    if ("location" in values) {
+      formData.append("location", values.location);
+    }
 
     if (html && html.trim()) {
       formData.append("description", html);
@@ -155,7 +109,6 @@ export const SponsorModel: React.FC<{
     setImageFileList([]);
     setLogoFileList([]);
     setHtml("");
-    setLocation("");
   };
 
   const imageUploadProps = {
@@ -220,6 +173,7 @@ export const SponsorModel: React.FC<{
         layout="vertical"
         initialValues={{
           title: editSponsor?.title || "",
+          location: editSponsor?.location || "",
         }}
       >
         <Form.Item
@@ -231,13 +185,10 @@ export const SponsorModel: React.FC<{
         </Form.Item>
         <Form.Item
           label="Location"
-          required={true}
+          name="location"
+          rules={[{ required: true, message: "Please enter sponsor location" }]}
         >
-          <GooglePlacesAutocomplete
-            value={location}
-            onChange={(v) => setLocation(v)}
-            placeholder="Search location"
-          />
+          <Input placeholder="Location" />
         </Form.Item>
         <Form.Item
           label="Description"
