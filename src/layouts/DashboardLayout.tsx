@@ -222,7 +222,11 @@ function useIsMobile(breakpoint: number = 768): boolean {
 }
 
 const DashboardLayout: React.FC = () => {
-  const { data: profile } = useProfileQuery(undefined);
+  const { data: profile } = useProfileQuery(undefined, {
+    refetchOnFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMountOrArgChange: false,
+  });
 
   const navigate = useNavigate();
   const location = useLocation();

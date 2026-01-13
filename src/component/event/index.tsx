@@ -338,17 +338,6 @@ const Event: React.FC = () => {
   const columns: TableColumnsType<EventType> = useMemo(
     () => [
       {
-        title: "Sl",
-        dataIndex: "sl",
-        key: "sl",
-        align: "center",
-        width: 64,
-        render: (_: any, __: any, index: number) => {
-          const serial = (page - 1) * limit + index + 1;
-          return <span>#{serial < 10 ? `0${serial}` : serial}</span>;
-        },
-      },
-      {
         title: "Image",
         dataIndex: "image",
         render: (src: string) =>

@@ -1,16 +1,16 @@
 import { useRef, useMemo, useState } from "react";
 import JoditEditor from "jodit-react";
 import {
-  useGetAboutQuery,
-  usePostAboutMutation,
+  useGetPrivacyPolicyQuery,
+  usePostPrivacyPolicyMutation,
 } from "../../redux/apiSlices/settingSlice";
 import { Button, message } from "antd";
 
-export default function About() {
+export default function PrivacyPolicy() {
   const editor = useRef(null);
 
-  const { data } = useGetAboutQuery(null);
-  const [postAbout, { isLoading: isSaving }] = usePostAboutMutation();
+  const { data } = useGetPrivacyPolicyQuery(null);
+  const [postPrivacyPolicy, { isLoading: isSaving }] = usePostPrivacyPolicyMutation();
   const [isDisable, setIsDisable] = useState(true);
 
   const description = data?.data?.description || "";
@@ -37,9 +37,9 @@ export default function About() {
 
   const handleSave = async () => {
     try {
-      await postAbout({ description: editorContentRef.current || "" }).unwrap();
+      await postPrivacyPolicy({ description: editorContentRef.current || "" }).unwrap();
       setIsDisable(true);
-      message.success("About section saved successfully!");
+      message.success("Privacy Policy section saved successfully!");
     } catch (err) {
       message.error("Failed to save. Please try again.");
     }

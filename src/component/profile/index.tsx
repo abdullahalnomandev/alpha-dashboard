@@ -17,12 +17,10 @@ import {
   Tooltip,
   Divider,
 } from "antd";
-import { useProfileQuery } from "../../redux/apiSlices/authSlice";
+import { useChangePasswordMutation, useProfileQuery } from "../../redux/apiSlices/authSlice";
 import { imageUrl } from "../../redux/api/baseApi";
 import {
-  useUpdateUserMutation,
-  useChangePasswordMutation, // <-- import useChangePasswordMutation
-} from "../../redux/apiSlices/userSlice";
+  useUpdateUserMutation} from "../../redux/apiSlices/userSlice";
 
 const { Title, Text } = Typography;
 
@@ -80,7 +78,11 @@ const passwordFormFields = [
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState("1");
-  const { data: userProfile } = useProfileQuery(undefined);
+  const { data: userProfile } = useProfileQuery(undefined, {
+    refetchOnMountOrArgChange: false,
+    refetchOnFocus: false,
+    refetchOnReconnect: false,
+  });
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
   const [
     changePassword,
@@ -98,7 +100,6 @@ export default function Profile() {
     contact: "",
   });
 
-  // Renamed all profileImage to image
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState<string | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -107,7 +108,7 @@ export default function Profile() {
     setProfileValues({
       name: userProfile?.data?.name || "",
       email: userProfile?.data?.email || "",
-      contact: userProfile?.data?.mobile || "",
+      contact: userProfile?.data?.phone || "",
     });
     setPreviewImage(undefined);
     setImageFile(null);
@@ -134,13 +135,12 @@ export default function Profile() {
     setProfileErrors(errors);
     if (Object.keys(errors).length === 0) {
       try {
-        // Use FormData to update name and mobile/contact (and image if present)
         const formData = new FormData();
         formData.append("name", profileValues.name);
         formData.append("mobile", profileValues.contact);
 
         if (imageFile) {
-          formData.append("image", imageFile);
+          formData.append("profileImage", imageFile);
         }
 
         await updateUser(formData).unwrap();
@@ -155,7 +155,6 @@ export default function Profile() {
     }
   };
 
-  // Updated to use useChangePasswordMutation for password change
   const handlePasswordSubmit = async () => {
     const errors: any = {};
     passwordFormFields.forEach((field) => {
@@ -197,7 +196,7 @@ export default function Profile() {
           style={{
             display: "block",
             fontWeight: 600,
-            color: "#e5e7eb",
+            color: "#262626",
             fontSize: 14,
             marginBottom: 8,
           }}
@@ -223,12 +222,10 @@ export default function Profile() {
             borderRadius: 8,
             fontSize: 15,
             height: 44,
-            color: "#f3f4f6",
           }}
-          className="dark-input"
         />
         {profileErrors[field.name] && (
-          <div style={{ color: "#fca5a5", fontSize: 13, marginTop: 4 }}>
+          <div style={{ color: "#ff4d4f", fontSize: 13, marginTop: 4 }}>
             {profileErrors[field.name]}
           </div>
         )}
@@ -242,7 +239,7 @@ export default function Profile() {
           style={{
             display: "block",
             fontWeight: 600,
-            color: "#e5e7eb",
+            color: "#262626",
             fontSize: 14,
             marginBottom: 8,
           }}
@@ -270,7 +267,7 @@ export default function Profile() {
                   field.name as "current" | "new" | "confirm"
                 )
               }
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#D1FC5B")}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "#1890ff")}
               onMouseLeave={(e) => (e.currentTarget.style.color = "#9ca3af")}
             >
               {showPasswords[field.name as keyof typeof showPasswords] ? (
@@ -293,36 +290,36 @@ export default function Profile() {
             borderRadius: 8,
             fontSize: 15,
             height: 44,
-            color: "#f3f4f6",
           }}
-          className="dark-input"
         />
         {passwordErrors[field.name] && (
-          <div style={{ color: "#fca5a5", fontSize: 13, marginTop: 4 }}>
+          <div style={{ color: "#ff4d4f", fontSize: 13, marginTop: 4 }}>
             {passwordErrors[field.name]}
           </div>
         )}
       </div>
     ));
 
-  // Image preview URL (local, fallback to previous image if none or not changed)
+  // --- CORRECTED getProfileImageSrc function ---
   const getProfileImageSrc = () => {
     if (previewImage) return previewImage;
-    if (userProfile?.data?.image) {
-      if (userProfile.data.image.startsWith("http")) {
-        return userProfile.data.image;
+    if (userProfile?.data?.profileImage) {
+      // If profileImage starts with http/https, return as is, otherwise prepend imageUrl
+      const img = userProfile.data.profileImage;
+      if (/^https?:\/\//.test(img)) {
+        return img;
       } else {
-        return imageUrl + "/" + userProfile.data.image;
+        return imageUrl + "/" + img;
       }
     }
-    // fallback
     return "https://noman1.netlify.app/_next/image?url=%2F_next%2Fstatic%2Fmedia%2FAbdullah_Al_Noman.c5d6012f.jpg&w=640&q=75";
   };
 
-  // Handler for image file selection
+  // --- CORRECTED handleImageChange function (accept image types) ---
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Accept standard image MIME types instead of "profileImage/"
     if (!file.type.startsWith("image/")) {
       message.error("Selected file is not a valid image");
       return;
@@ -344,7 +341,7 @@ export default function Profile() {
         </span>
       ),
       children: (
-        <div style={{ padding: "32px 40px", background: "#000" }}>
+        <div style={{ padding: "32px 40px", background: "#fff" }}>
           <div
             style={{
               display: "flex",
@@ -358,9 +355,9 @@ export default function Profile() {
                 size={110}
                 src={getProfileImageSrc()}
                 style={{
-                  border: "4px solid #D1FC5B",
+                  border: "4px solid #1890ff",
                   boxShadow:
-                    "0 0 0 4px rgba(209, 252, 91, 0.1), 0 8px 24px rgba(209, 252, 91, 0.2)",
+                    "0 0 0 4px rgba(24, 144, 255, 0.07), 0 8px 24px rgba(24, 144, 255, 0.08)",
                 }}
               />
               <Tooltip title="Change profile picture">
@@ -369,35 +366,34 @@ export default function Profile() {
                     position: "absolute",
                     bottom: 0,
                     right: -4,
-                    background:
-                      "linear-gradient(135deg, #D1FC5B 0%, #b8e639 100%)",
+                    background: "#1890ff",
                     borderRadius: "50%",
                     width: 36,
                     height: 36,
                     cursor: "pointer",
-                    boxShadow: "0 4px 16px rgba(209, 252, 91, 0.4)",
+                    boxShadow: "0 4px 16px rgba(24,144,255,0.17)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     transition: "all 0.3s ease",
-                    border: "3px solid #111827",
+                    border: "3px solid #fff",
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = "scale(1.1) rotate(5deg)";
                     e.currentTarget.style.boxShadow =
-                      "0 6px 20px rgba(209, 252, 91, 0.6)";
+                      "0 6px 20px rgba(24,144,255,0.27)";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = "scale(1) rotate(0deg)";
                     e.currentTarget.style.boxShadow =
-                      "0 4px 16px rgba(209, 252, 91, 0.4)";
+                      "0 4px 16px rgba(24,144,255,0.17)";
                   }}
                   onClick={() => {
                     if (fileInputRef.current) fileInputRef.current.click();
                   }}
                 >
                   <CameraOutlined
-                    style={{ color: "#0a0a0a", fontSize: 16, fontWeight: 700 }}
+                    style={{ color: "#fff", fontSize: 16, fontWeight: 700 }}
                   />
                   <input
                     ref={fileInputRef}
@@ -413,14 +409,14 @@ export default function Profile() {
               level={3}
               style={{
                 marginBottom: 4,
-                color: "#f9fafb",
+                color: "#141414",
                 fontWeight: 700,
                 fontSize: 24,
               }}
             >
               {profileValues.name}
             </Title>
-            <Text style={{ fontSize: 14, color: "#9ca3af" }}>
+            <Text style={{ fontSize: 14, color: "#8c8c8c" }}>
               {profileValues.email}
             </Text>
           </div>
@@ -436,15 +432,10 @@ export default function Profile() {
                 loading={isUpdating}
                 style={{
                   borderRadius: 8,
-                  background:
-                    "linear-gradient(135deg, #D1FC5B 0%, #b8e639 100%)",
                   fontWeight: 700,
                   height: 48,
                   fontSize: 15,
-                  boxShadow: "0 4px 16px rgba(209, 252, 91, 0.3)",
-                  border: "none",
                   letterSpacing: 0.5,
-                  color: "#0a0a0a",
                 }}
                 className="profile-save-btn"
               >
@@ -463,25 +454,25 @@ export default function Profile() {
         </span>
       ),
       children: (
-        <div style={{ padding: "32px 40px", background: "#000" }}>
+        <div style={{ padding: "32px 40px", background: "#fff" }}>
           <div style={{ marginBottom: 28 }}>
             <Title
               level={4}
               style={{
                 marginBottom: 8,
-                color: "#f9fafb",
+                color: "#141414",
                 fontWeight: 700,
                 fontSize: 20,
               }}
             >
               Change Password
             </Title>
-            <Text style={{ fontSize: 14, color: "#9ca3af" }}>
+            <Text style={{ fontSize: 14, color: "#8c8c8c" }}>
               Ensure your account is using a strong password to stay secure
             </Text>
           </div>
 
-          <Divider style={{ margin: "24px 0", borderColor: "#374151" }} />
+          <Divider style={{ margin: "24px 0", borderColor: "#f0f0f0" }} />
 
           {renderPasswordFields()}
 
@@ -493,14 +484,10 @@ export default function Profile() {
             loading={isChangingPassword}
             style={{
               borderRadius: 8,
-              background: "linear-gradient(135deg, #D1FC5B 0%, #b8e639 100%)",
               fontWeight: 700,
               height: 48,
               fontSize: 15,
-              boxShadow: "0 4px 16px rgba(209, 252, 91, 0.3)",
-              border: "none",
               letterSpacing: 0.5,
-              color: "#0a0a0a",
             }}
             className="profile-save-btn"
           >
@@ -514,7 +501,6 @@ export default function Profile() {
   return (
     <div
       style={{
-        // background: " #000",
         padding: "48px 20px",
       }}
     >
@@ -522,12 +508,12 @@ export default function Profile() {
         style={{
           maxWidth: 720,
           margin: "0 auto",
-          background: "#000",
+          background: "#fff",
           borderRadius: 20,
           boxShadow:
-            "0 20px 60px rgba(0, 0, 0, 0.5), 0 2px 16px 0 rgba(209, 252, 91, 0.25), 0 0 0 1px rgba(209, 252, 91, 0.12)",
+            "0 20px 60px rgba(0,0,0,0.10), 0 2px 16px 0 rgba(24,144,255,0.08), 0 0 0 1px rgba(24,144,255,0.04)",
           overflow: "hidden",
-          border: "1px solid rgba(255, 255, 255, 0.05)",
+          border: "1px solid #f0f0f0",
         }}
       >
         <Tabs
@@ -535,25 +521,22 @@ export default function Profile() {
           onChange={setActiveTab}
           items={tabItems}
           size="large"
-          // Remove 'centered' to align tabs to the start (left)
           tabBarStyle={{
-            background: "#0f0f0f",
+            background: "#f7fafc",
             margin: 0,
             padding: "0 20px",
-            borderBottom: "1px solid #2a2a2a",
+            borderBottom: "1px solid #f0f0f0",
           }}
         />
       </div>
 
       <style>
         {`
-
         .ant-tabs-tab {
           padding: 16px 8px !important;
           transition: all 0.3s;
-          color: #9ca3af !important;
+          color: #595959 !important;
         }
-
         `}
       </style>
     </div>

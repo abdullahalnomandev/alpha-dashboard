@@ -10,15 +10,20 @@ import { SiReacthookform } from "react-icons/si";
 import { HiOutlineUsers } from "react-icons/hi2";
 import { FaRegNewspaper } from "react-icons/fa6";
 import StoriesPage from "../pages/stories";
-import { MdOutlineDomainAdd } from "react-icons/md";
+import { MdOutlineDomainAdd, MdOutlinePrivacyTip } from "react-icons/md";
 import SponsorPage from "../pages/sponsor";
 import OfferCategoryPage from "../pages/OfferCategoryPage";
 import { CiBoxList, CiCircleInfo, CiSettings } from "react-icons/ci";
-import { BiSolidOffer } from "react-icons/bi";
+import { BiMessageSquareError, BiSolidOffer } from "react-icons/bi";
 import ExclusiveOfferPage from "../pages/ExclusiveOfferPage";
 import AboutPage from "../pages/settings/AboutPage";
-
-// Adjust for Ant Design Menu's "children" as subMenu, `element` and `path` should be only on leaf items
+import PrivacyPolicyPage from "../pages/settings/PrivacyPolicyPage";
+import TermsAndConditionPage from "../pages/settings/TermsAndConditionPage";
+import {LuBookUser} from 'react-icons/lu';
+import { BsListCheck } from "react-icons/bs";
+import { CgMenuBoxed } from "react-icons/cg";
+import MemberShipFeaturesPage from "../pages/memberships/MemberShipFeaturesPage";
+import MemberShipPlanPage from "../pages/memberships/MemberShipPlanPage";
 
 export const MENU_CONFIG = [
   {
@@ -30,7 +35,7 @@ export const MENU_CONFIG = [
   },
   {
     key: 'membership-application',
-    label: 'Membership Application', 
+    label: 'Member Requests', 
     icon: <SiReacthookform />,
     element: <MembershipApplicationPage />,
     path: '/membership-application',
@@ -85,23 +90,53 @@ export const MENU_CONFIG = [
     path: '/offer',
   },
   {
+    key: 'memberships',
+    label: 'Memberships',
+    icon: <LuBookUser />,
+    children: [
+
+      {
+        key: 'membership-Plans',     // make the key unique among all menu items
+        label: 'Plans',
+        icon: <CgMenuBoxed />,
+        element: <MemberShipPlanPage />,
+        path: '/settings/membership-pans',
+      },
+      {
+        key: 'membership-features',     // make the key unique among all menu items
+        label: 'Features',
+        icon: <BsListCheck  />,
+        element: <MemberShipFeaturesPage />,
+        path: '/settings/membership-features',
+      },
+    ]
+  },
+  {
     key: 'settings',
     label: 'Settings',
     icon: <CiSettings />,
     children: [
-      {
-        key: 'settings-sponsors',           // make the key unique among all menu items
-        label: 'Sponsors',
-        icon: <MdOutlineDomainAdd />,
-        element: <SponsorPage />,
-        path: '/sponsors',
-      },
+
       {
         key: 'settings-about',     // make the key unique among all menu items
         label: 'About',
         icon: <CiCircleInfo />,
         element: <AboutPage />,
         path: '/settings/about',
+      },
+      {
+        key: 'privacy-policy',     // make the key unique among all menu items
+        label: 'Privacy Policy',
+        icon: <MdOutlinePrivacyTip  />,
+        element: <PrivacyPolicyPage />,
+        path: '/settings/privacy-policy',
+      },
+      {
+        key: 'terms-and-conditions',     // make the key unique among all menu items
+        label: 'Terms & Conditions',
+        icon: <BiMessageSquareError  />,
+        element: <TermsAndConditionPage />,
+        path: '/settings/terms-and-conditions',
       },
     ]
   }

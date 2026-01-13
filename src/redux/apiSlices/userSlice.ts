@@ -1,4 +1,5 @@
 import { api } from "../api/baseApi";
+import { TagTypes } from "../tag-types";
 
 const userSlice = api.injectEndpoints({
     endpoints: (builder) => ({
@@ -23,11 +24,12 @@ const userSlice = api.injectEndpoints({
             query: (formData: FormData) => {
                 return {
                     method: "PATCH",
-                    url: `/user/profile`,
+                    url: "/user",
                     body: formData,
                     formData: true,
                 };
             },
+            invalidatesTags: [TagTypes.user], // Added tag invalidation for User
         }),
         changePassword: builder.mutation({
             query: ({
@@ -40,7 +42,7 @@ const userSlice = api.injectEndpoints({
                 confirmPassword: string;
             }) => {
                 return {
-                    method: "PATCH",
+                    method: "POST",
                     url: `/auth/change-password`,
                     body: {
                         currentPassword,
