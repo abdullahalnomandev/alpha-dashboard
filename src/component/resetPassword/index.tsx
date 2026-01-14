@@ -6,17 +6,13 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 const { Text, Title } = Typography;
 
-const beautifyBgGradient =
-  "radial-gradient(ellipse 100% 120% at 60% 0%, #141421 0%, #141922 40%, #131D23 70%, #141421 100%)";
-const loginBoxShadow =
-  "0 8px 32px 0 rgba(209,252,91,0.18), 0 1.5px 4px rgba(65,103,40,0.12)";
-
-// Professional OTP input with 6 individual boxes
+// Professional OTP input with 4 individual boxes - all default colors/styles
 const OtpInput: React.FC<{
   value: string;
   onChange: (val: string) => void;
   autoFocus?: boolean;
 }> = ({ value, onChange, autoFocus }) => {
+  const OTP_LENGTH = 4;
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>, idx: number) => {
@@ -28,14 +24,14 @@ const OtpInput: React.FC<{
       return;
     }
     if (newValue.length > 1) {
-      let chars = newValue.split("").slice(0, 6 - idx);
+      let chars = newValue.split("").slice(0, OTP_LENGTH - idx);
       let valArr = value.split("");
       for (let i = 0; i < chars.length; ++i) {
         valArr[idx + i] = chars[i];
       }
       onChange(valArr.join(""));
-      const nextIdx = Math.min(idx + chars.length, 5);
-      if (nextIdx < 6 && inputsRef.current[nextIdx]) {
+      const nextIdx = Math.min(idx + chars.length, OTP_LENGTH - 1);
+      if (nextIdx < OTP_LENGTH && inputsRef.current[nextIdx]) {
         inputsRef.current[nextIdx]?.focus();
       }
       return;
@@ -43,7 +39,7 @@ const OtpInput: React.FC<{
     let valArr = value.split("");
     valArr[idx] = newValue[0];
     onChange(valArr.join(""));
-    if (idx < 5 && newValue && inputsRef.current[idx + 1]) {
+    if (idx < OTP_LENGTH - 1 && newValue && inputsRef.current[idx + 1]) {
       inputsRef.current[idx + 1]?.focus();
     }
   };
@@ -62,8 +58,8 @@ const OtpInput: React.FC<{
       inputsRef.current[idx - 1]?.focus();
       e.preventDefault();
     } else if (
-      (e.key === "ArrowRight" && idx < 5) ||
-      (e.key === "ArrowDown" && idx < 5)
+      (e.key === "ArrowRight" && idx < OTP_LENGTH - 1) ||
+      (e.key === "ArrowDown" && idx < OTP_LENGTH - 1)
     ) {
       inputsRef.current[idx + 1]?.focus();
       e.preventDefault();
@@ -78,15 +74,14 @@ const OtpInput: React.FC<{
 
   return (
     <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-      {Array.from({ length: 6 }).map((_, idx) => (
+      {Array.from({ length: OTP_LENGTH }).map((_, idx) => (
         <input
           key={idx}
           type="text"
           inputMode="numeric"
           pattern="[0-9]*"
           maxLength={1}
-
-          ref={(el:any) => (inputsRef.current[idx] = el)}
+          ref={(el: any) => (inputsRef.current[idx] = el)}
           value={value[idx] || ""}
           onChange={e => handleChange(e, idx)}
           onKeyDown={e => handleKeyDown(e, idx)}
@@ -96,13 +91,8 @@ const OtpInput: React.FC<{
             textAlign: "center",
             fontSize: 26,
             borderRadius: 8,
-            border: "1.5px solid #242b1f",
-            outline: "none",
-            boxShadow: "0 1.5px 4px rgba(65,103,40,0.07)",
-            background: "#181e11",
-            color: "#f0fdf4",
-            fontWeight: 600,
-            letterSpacing: "1px"
+            boxShadow:
+              "0 2px 6px rgba(0,0,0,0.07), 0 1.5px 3px rgba(0,0,0,0.025)" // subtle shadow for OTP inputs
           }}
           autoComplete={idx === 0 ? "one-time-code" : undefined}
           aria-label={`OTP digit ${idx + 1}`}
@@ -113,9 +103,10 @@ const OtpInput: React.FC<{
 };
 
 const ResetPassword: React.FC = () => {
+  const OTP_LENGTH = 4;
   const [step, setStep] = useState<"otp" | "reset">("otp");
   const [otp, setOtp] = useState("");
-  const [otpRaw, setOtpRaw] = useState(""); // controlled value for 6-box
+  const [otpRaw, setOtpRaw] = useState(""); // controlled value for 4-box
   const [loading, setLoading] = useState(false);
 
   const [resetPassword, { isLoading: isResettingPassword }] = useResetPasswordMutation();
@@ -152,12 +143,12 @@ const ResetPassword: React.FC = () => {
     }
   }, [resendTimer]);
 
-  // Step 1: Enter OTP via 6 boxes
+  // Step 1: Enter OTP via 4 boxes
   const handleOtpSubmit = async () => {
     setLoading(true);
     try {
-      if (otpRaw.length !== 6 || !/^\d{6}$/.test(otpRaw)) {
-        message.error("OTP must be exactly 6 digits (numbers only).");
+      if (otpRaw.length !== OTP_LENGTH || !new RegExp(`^\\d{${OTP_LENGTH}}$`).test(otpRaw)) {
+        message.error(`OTP must be exactly ${OTP_LENGTH} digits (numbers only).`);
         setLoading(false);
         return;
       }
@@ -170,7 +161,7 @@ const ResetPassword: React.FC = () => {
     }
   };
 
-  // Step 2: Set new password using OTP (6 digits), do not include email in payload
+  // Step 2: Set new password using OTP (4 digits), do not include email in payload
   const handleResetSubmit = async (values: { newPassword: string; confirmPassword: string }) => {
     setLoading(true);
     try {
@@ -231,58 +222,27 @@ const ResetPassword: React.FC = () => {
       style={{
         minHeight: "100vh",
         width: "100vw",
-        background: beautifyBgGradient,
         position: "relative",
         display: "flex",
         alignItems: "center",
-        justifyContent: "center",
-        color: "#e5e7eb",
+        justifyContent: "center"
       }}
     >
-      {/* Elegant floating shapes */}
-      <div
-        style={{
-          position: "absolute",
-          top: 32,
-          right: 136,
-          width: 112,
-          height: 112,
-          background:
-            "radial-gradient(circle, rgba(209,252,91,0.34) 58%, transparent 100%)",
-          borderRadius: "50%",
-          filter: "blur(17px)",
-          opacity: 0.14,
-          zIndex: 0,
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          left: 18,
-          bottom: 12,
-          width: 228,
-          height: 98,
-          background:
-            "radial-gradient(ellipse at right, rgba(163,230,53,0.15) 60%, transparent 100%)",
-          borderRadius: "58% 39% 66% 48% / 67% 30% 66% 30%",
-          filter: "blur(36px)",
-          opacity: 0.21,
-          zIndex: 0,
-        }}
-      />
       <div
         style={{
           width: 450,
           maxWidth: "97vw",
-          boxShadow: loginBoxShadow,
-          borderRadius: 18,
+          // Add a modern shadow for the card container
+          boxShadow: "0 8px 32px rgba(25,42,77,0.15), 0 2px 8px rgba(60,60,80,0.07)",
+          // Optional: Could add a slight border radius (not asked for, but common w/shadow)
+          borderRadius: 16,
           padding: "38px 36px 34px 36px",
           zIndex: 1,
           minHeight: 350,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          backdropFilter: "blur(8px)",
+          background: "#fff" // make sure shadow looks right
         }}
       >
         <div
@@ -294,22 +254,18 @@ const ResetPassword: React.FC = () => {
           }}
         >
           <img
-            src="https://rt1percent.com/cdn/shop/files/favicon_black_circle_512.png"
+            src="./src/assets/alpha_logo.svg"
             alt="Logo"
             style={{
               width: 54,
               height: 54,
               borderRadius: "100px",
-              marginBottom: 8,
-              border: "2.5px solid #a3e63522",
-              boxShadow: "0 2px 10px #d1fc5b33",
-              background: "#1f2a19",
+              marginBottom: 8
             }}
           />
           <Title
             level={3}
             style={{
-              color: "#f9fafb",
               margin: 0,
               fontWeight: 700,
               fontSize: 27,
@@ -322,7 +278,6 @@ const ResetPassword: React.FC = () => {
           </Title>
           <Text
             style={{
-              color: "#a3e635",
               fontWeight: 500,
               fontSize: 15,
               marginTop: 4,
@@ -332,14 +287,12 @@ const ResetPassword: React.FC = () => {
             }}
           >
             {step === "otp"
-              ? "Enter the 6-digit code sent to your email to verify your identity."
+              ? `Enter the ${OTP_LENGTH}-digit code sent to your email to verify your identity.`
               : "Enter your new password below."}
           </Text>
         </div>
-        <Divider
-          style={{ marginBottom: 24, marginTop: 0, borderColor: "#3f3f46" }}
-        />
-        {/* OTP Step: use professional 6-box field */}
+        <Divider />
+        {/* OTP Step: use professional 4-box field */}
         {step === "otp" && (
           <Form
             form={formOtp}
@@ -353,18 +306,18 @@ const ResetPassword: React.FC = () => {
               required
               // No name, we directly use custom logic
               validateStatus={
-                (!otpRaw || otpRaw.length < 6) ? "error" : undefined
+                (!otpRaw || otpRaw.length < OTP_LENGTH) ? "error" : undefined
               }
               help={
-                !otpRaw || otpRaw.length < 6
-                  ? "Enter a 6-digit code."
+                !otpRaw || otpRaw.length < OTP_LENGTH
+                  ? `Enter a ${OTP_LENGTH}-digit code.`
                   : undefined
               }
             >
               <OtpInput
                 value={otpRaw}
                 onChange={val => {
-                  setOtpRaw(val.replace(/\D/g, "").slice(0, 6));
+                  setOtpRaw(val.replace(/\D/g, "").slice(0, OTP_LENGTH));
                 }}
                 autoFocus
               />
@@ -372,18 +325,18 @@ const ResetPassword: React.FC = () => {
             <Form.Item>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
                 <Button
-                  style={{ color: "#fff", flex: 1 }}
+                  style={{ flex: 1 }}
                   type="primary"
                   htmlType="submit"
                   size="large"
                   block
                   loading={loading}
-                  disabled={otpRaw.length !== 6}
+                  disabled={otpRaw.length !== OTP_LENGTH}
                 >
                   Verify Code
                 </Button>
                 <Button
-                  style={{ marginLeft: 10, flex: 1, color: "#ffff", border:'1px solid #ffff' }}
+                  style={{ marginLeft: 10, flex: 1 }}
                   type="text"
                   icon={<ReloadOutlined />}
                   size="large"
@@ -405,7 +358,7 @@ const ResetPassword: React.FC = () => {
                 <Button
                   type="link"
                   icon={<LoginOutlined />}
-                  style={{ color: "#a3e635", fontWeight: 500, padding: 0 }}
+                  style={{ fontWeight: 500, padding: 0 }}
                   onClick={handleGoToLogin}
                   tabIndex={-1}
                 >
@@ -440,8 +393,7 @@ const ResetPassword: React.FC = () => {
                 prefix={<LockOutlined style={{ marginRight: 5 }} />}
                 placeholder="Enter your new password"
                 autoComplete="new-password"
-                className="login-placeholder-gray"
-                style={{ color: "#e5e7eb", cursor: "pointer" }}
+                style={{ cursor: "pointer" }}
               />
             </Form.Item>
             <Form.Item
@@ -467,12 +419,10 @@ const ResetPassword: React.FC = () => {
                 prefix={<LockOutlined style={{ marginRight: 5 }} />}
                 placeholder="Confirm password"
                 size="large"
-                className="login-placeholder-gray"
               />
             </Form.Item>
             <Form.Item>
               <Button
-                style={{ color: "black" }}
                 type="primary"
                 htmlType="submit"
                 size="large"
@@ -488,7 +438,7 @@ const ResetPassword: React.FC = () => {
                 <Button
                   type="link"
                   icon={<LoginOutlined />}
-                  style={{ color: "#a3e635", fontWeight: 500, padding: 0 }}
+                  style={{ fontWeight: 500, padding: 0 }}
                   onClick={handleGoToLogin}
                   tabIndex={-1}
                 >
@@ -498,19 +448,6 @@ const ResetPassword: React.FC = () => {
             </Form.Item>
           </Form>
         )}
-        <style>
-          {`
-          .login-placeholder-gray::placeholder {
-            color: #9ca3af !important;
-            opacity: 1 !important;
-          }
-          /* For password input inside .ant-input-affix-wrapper */
-          .login-placeholder-gray input::placeholder {
-            color: #9ca3af !important;
-            opacity: 1 !important;
-          }
-          `}
-        </style>
       </div>
     </div>
   );

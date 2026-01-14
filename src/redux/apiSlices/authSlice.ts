@@ -17,7 +17,7 @@ const authSlice = api.injectEndpoints({
         console.log("data is ", data);
         return {
           method: "POST",
-          url: "/auth/login",
+          url: "/auth/admin-login",
           body: data,
         };
       },

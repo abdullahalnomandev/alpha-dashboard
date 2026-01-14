@@ -14,6 +14,7 @@ import { EyeOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useGetUsersQuery} from "../../redux/apiSlices/userSlice";
 import { UserInfoModal } from "./UserInfoModel";
+import { imageUrl } from "../../redux/api/baseApi";
 const { Text } = Typography;
 
 /* =====================
@@ -67,21 +68,27 @@ const User: React.FC = () => {
       {
         title: "Image",
         dataIndex: "profileImage",
-        render: (src: string, _: UserType) =>
-          src ? (
+        render: (src: string, _: UserType) => {
+          let imageSrc = src;
+          if (src && !src.startsWith("http")) {
+            // imageUrl must be imported at the top: import { imageUrl } from "../../redux/api/baseApi";
+            imageSrc = imageUrl + src;
+          }
+          return src ? (
             <img
-              src={src}
+              src={imageSrc}
               alt="profile"
               style={{
                 height: 48,
                 width: 48,
                 objectFit: "cover",
-                borderRadius: 8,
+                borderRadius: "100%",
               }}
             />
           ) : (
             <span style={{ color: "#ccc" }}>No image</span>
-          ),
+          );
+        },
       },
       {
         title: "Name",
