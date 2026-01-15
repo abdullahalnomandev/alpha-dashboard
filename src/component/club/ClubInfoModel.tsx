@@ -44,9 +44,9 @@ export const ClubInfoModel: React.FC<{
           <Descriptions.Item label="Member">
             {club.limitOfMember}
           </Descriptions.Item>
-          <Descriptions.Item label="Number of Members">
+          {/* <Descriptions.Item label="Number of Members">
             {club.numberOfMembers}
-          </Descriptions.Item>
+          </Descriptions.Item> */}
         </Descriptions>
       </>
     )}

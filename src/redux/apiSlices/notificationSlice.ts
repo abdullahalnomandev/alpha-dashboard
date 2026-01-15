@@ -11,7 +11,6 @@ const notificationSlice = api.injectEndpoints({
                 method: "GET",
                 params: query || {},
             }),
-            providesTags: [TagTypes.notification],
         }),
         // Update details for a specific notification (unchanged)
         updateNotification: builder.mutation({
@@ -25,10 +24,27 @@ const notificationSlice = api.injectEndpoints({
                 { type: TagTypes.notification, id }
             ],
         }),
+        // Get notification count (no query params)
+        getNotificationCount: builder.query({
+            query: () => ({
+                url: `${LS_API}/count`,
+                method: "GET",
+            }),
+            providesTags: [TagTypes.notification],
+        }),
+        // Clear all notifications
+        clearNotifications: builder.mutation({
+            query: () => ({
+                url: `${LS_API}/clear`,
+                method: "POST",
+            })
+        }),
     }),
 });
 
 export const {
     useGetNotificationsQuery,
     useUpdateNotificationMutation,
+    useGetNotificationCountQuery,
+    useClearNotificationsMutation,
 } = notificationSlice;

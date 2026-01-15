@@ -8,7 +8,7 @@ import { WiTime4 } from "react-icons/wi";
 import MembershipApplicationPage from "../pages/membership-application";
 import { SiReacthookform } from "react-icons/si";
 import { HiOutlineUsers } from "react-icons/hi2";
-import { FaRegNewspaper } from "react-icons/fa6";
+import { FaQuestion, FaRegNewspaper } from "react-icons/fa6";
 import StoriesPage from "../pages/stories";
 import { MdOutlineDomainAdd, MdOutlinePrivacyTip } from "react-icons/md";
 import SponsorPage from "../pages/sponsor";
@@ -24,6 +24,10 @@ import { BsListCheck } from "react-icons/bs";
 import { CgMenuBoxed } from "react-icons/cg";
 import MemberShipFeaturesPage from "../pages/memberships/MemberShipFeaturesPage";
 import MemberShipPlanPage from "../pages/memberships/MemberShipPlanPage";
+import FaqPage from "../pages/settings/FaqPage";
+import ContactFormPage from "../pages/ContactFormPage";
+import { RiMailSendLine } from "react-icons/ri";
+
 
 export const MENU_CONFIG = [
   {
@@ -39,6 +43,13 @@ export const MENU_CONFIG = [
     icon: <SiReacthookform />,
     element: <MembershipApplicationPage />,
     path: '/membership-application',
+  },
+  {
+    key: 'contact-from',
+    label: 'Application Form', 
+    icon: <RiMailSendLine />,
+    element: <ContactFormPage />,
+    path: '/user/contact-from',
   },
   {
     key: 'user-management',
@@ -117,6 +128,13 @@ export const MENU_CONFIG = [
     icon: <CiSettings />,
     children: [
 
+      {
+        key: 'settings-faq',     // make the key unique among all menu items
+        label: 'Faq',
+        icon: <FaQuestion />,
+        element: <FaqPage />,
+        path: '/settings/faq',
+      },
       {
         key: 'settings-about',     // make the key unique among all menu items
         label: 'About',

@@ -10,8 +10,9 @@ export const TagTypes = {
   offer:"offer",
   setting:"setting",
   membershipFeature:'membershipFeature',
-  membershipPlan:"membershipPlan"
-  
+  membershipPlan:"membershipPlan",
+  faq:"faq",
+  contactForm:"contactForm"
   
 };
 
@@ -28,5 +29,7 @@ export const TagTypesList = [
   TagTypes.offer,
   TagTypes.setting,
   TagTypes.membershipFeature,
-  TagTypes.membershipPlan
+  TagTypes.membershipPlan,
+  TagTypes.faq,
+  TagTypes.contactForm
 ];

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { FiBell } from "react-icons/fi";
-import { useGetNotificationsQuery } from "../../redux/apiSlices/notificationSlice";
-import { Spin, Pagination } from "antd";
+import { useGetNotificationsQuery, useUpdateNotificationMutation } from "../../redux/apiSlices/notificationSlice";
+import { Spin, Pagination, Button } from "antd";
+import { useNavigate } from "react-router-dom";
 
 // Utility for date display
 function formatDate(dateString?: string) {
@@ -10,25 +11,31 @@ function formatDate(dateString?: string) {
   return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
+// Professional notification colors
+const COLOR_SEEN_BG = "#f6f8fa"; // subtle gray/neutral
+const COLOR_UNSEEN_BG = "#eaf3ff"; // subtle blue
+const COLOR_SEEN_TEXT = "#9aa5ba";
+const COLOR_UNSEEN_TEXT = "#293146";
+const COLOR_UNSEEN_BORDER = "#61a5fa";
+const COLOR_HOVER_BG = "#e2ebfb";
+
 const NotificationPage: React.FC = () => {
-  // Set initial state for page and pageSize
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
 
-  // Always pass latest page/pageSize to query
-  const { data, isLoading } = useGetNotificationsQuery({
+  // Fetch notifications
+  const { data,refetch, isLoading } = useGetNotificationsQuery({
     page,
     limit: pageSize,
   });
+  const [updateNotification] = useUpdateNotificationMutation();
 
-  // Get notifications, pagination details
+  // Get notifications (using _id as per model)
   const notifications: any[] = data?.data || [];
-
-  // Defensive: default values if not returned from API yet
   const total = data?.pagination?.total ?? 0;
   const backendPage = data?.pagination?.page ?? 1;
 
-  // If backend returns a different page than our state, sync it
   useEffect(() => {
     if (!isLoading && typeof backendPage === "number" && backendPage !== page) {
       setPage(backendPage);
@@ -36,22 +43,37 @@ const NotificationPage: React.FC = () => {
     // eslint-disable-next-line
   }, [backendPage, isLoading]);
 
+  // Handle notification click: mark as seen if not yet, then redirect
+  const handleNotificationClick = async (item: any) => {
+    refetch();
+    if (!item.seen) {
+      try {
+        await updateNotification({
+          id: item._id,
+          data: { seen: true },
+        }).unwrap();
+      } catch (err) {
+        // error is silent, still navigate
+      }
+    }
+    if (item.path) {
+      navigate(item.path);
+    }
+  };
+
   return (
     <div
       style={{
-        minHeight: 590,
-        padding: "0",
-        overflowY: "auto",
+        background: "#f7fafd",
       }}
     >
       {/* Main Body */}
       <div
         style={{
-          margin: "32px auto",
-          background: "linear-gradient(135deg, rgb(2, 6, 23) 0%, rgb(10, 15, 31) 100%)",
+          background: "#fff",
           borderRadius: 15,
-          boxShadow: "0 0 0 1.5px #383b40, 0 6px 40px 0 #18192040",
-          padding: "32px 18px 34px 18px",
+          boxShadow: "0 1.5px 4px #e4e8ee, 0 6px 40px 0 #e3e6ee40",
+          padding: "10px",
         }}
       >
         {isLoading ? (
@@ -61,66 +83,135 @@ const NotificationPage: React.FC = () => {
         ) : notifications.length === 0 ? (
           <div
             style={{
-              color: "#8C949E",
+              color: "#7A869A",
               textAlign: "center",
               padding: "48px 0",
               fontSize: 16,
               fontWeight: 500,
-              background: "#17181c",
+              background: "#f4f6fa",
               borderRadius: 12,
             }}
           >
             No notifications found.
+            <div style={{ marginTop: 22 }}>
+              <Button
+                type="primary"
+                onClick={() => navigate("/user/contact-from")}
+              >
+                Go to Contact Form
+              </Button>
+            </div>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {notifications?.map((item, idx) => (
-              <div
-                key={item.id || idx}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  background: "#2E2E2E",
-                  borderRadius: 10,
-                  height: 62,
-                  marginBottom: "0",
-                }}
-              >
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {notifications?.map((item, idx) => {
+              const seen = !!item.seen;
+              // background and color based on seen/unseen
+              const bgColor = seen ? COLOR_SEEN_BG : COLOR_UNSEEN_BG;
+              const borderLeft = seen ? undefined : `3px solid ${COLOR_UNSEEN_BORDER}`;
+              const titleColor = seen ? COLOR_SEEN_TEXT : COLOR_UNSEEN_TEXT;
+              // subtle hover effect for unseen
+              return (
                 <div
+                  key={item._id || idx}
+                  tabIndex={0}
+                  onClick={() => handleNotificationClick(item)}
                   style={{
-                    width: 50,
-                    minWidth: 50,
-                    height: 50,
-                    background: "#3F522E",
-                    borderRadius: 8,
-                    margin: "0 8px",
-                    marginRight: 15,
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
+                    background: bgColor,
+                    borderRadius: 10,
+                    // backgroundColor:'red',
+                    borderLeft,
+                    height: "calc(100vh - 35%)",
+                    overflow:'hidden',
+                    marginBottom: "0",
+                    boxShadow: "0 0.5px 2.5px #e2e5ec29",
+                    cursor: "pointer",
+                    transition: "background 0.16s,border 0.15s",
+                    outline: "none",
                   }}
+                  onMouseOver={e => {
+                    if (!seen) (e.currentTarget.style.background = COLOR_HOVER_BG);
+                  }}
+                  onMouseOut={e => {
+                    if (!seen) (e.currentTarget.style.background = COLOR_UNSEEN_BG);
+                  }}
+                  onFocus={e => {
+                    if (!seen) (e.currentTarget.style.background = COLOR_HOVER_BG);
+                  }}
+                  onBlur={e => {
+                    if (!seen) (e.currentTarget.style.background = COLOR_UNSEEN_BG);
+                  }}
+                  aria-label={`Notification: ${item.title ?? "Email Notification"}`}
                 >
-                  <FiBell style={{ color: "#A3C64B", fontSize: 20 }} />
+                  <div
+                    style={{
+                      width: 50,
+                      minWidth: 60,
+                      height: 50,
+                      background: seen ? "#f0f3f7" : "#e3eefd",
+                      borderRadius: 8,
+                      margin: "0 8px",
+                      marginRight: 15,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: seen ? "1px solid #f0f3f7" : "1.5px solid #afd8fa",
+                    }}
+                  >
+                    <FiBell style={{ fontSize: 21, color: seen ? "#aac2da" : "#2d8cff" }} />
+                  </div>
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+                    <span style={{
+                      color: titleColor,
+                      fontWeight: seen ? 400 : 600,
+                      fontSize: 15,
+                      letterSpacing: 0.14,
+                      lineHeight: "19px",
+                      textOverflow: "ellipsis",
+                      overflow: "hidden",
+                      whiteSpace: "nowrap"
+                    }}>
+                      {item.title ?? "Email Notification"}
+                      {!seen && (
+                        <span style={{
+                          marginLeft: 7,
+                          fontSize: 9.5,
+                          background: "#e1edf9",
+                          color: "#2185d0",
+                          borderRadius: 7,
+                          padding: "2px 9px",
+                          fontWeight: 600,
+                          textTransform: "uppercase",
+                          letterSpacing: 0.5,
+                          verticalAlign: "middle",
+                        }}>
+                          NEW
+                        </span>
+                      )}
+                    </span>
+                    <span style={{
+                      color: seen ? "#b2b9c3" : "#345875",
+                      fontSize: 13.3,
+                      fontWeight: 400,
+                      letterSpacing: 0.11,
+                      marginTop: 1,
+                      textOverflow: "ellipsis",
+                      overflow: "hidden",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical"
+                    }}>
+                      {item.message ?? "Lorem ipsum dolor sit amet, put all your content"}
+                    </span>
+                    <span style={{ color: "#94a3bb", fontSize: 12, marginTop: 2 }}>
+                      {formatDate(item.createdAt)}
+                    </span>
+                  </div>
                 </div>
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
-                  <span style={{ color: "#ffff", fontWeight: 700, fontSize: 15, letterSpacing: 0.2 }}>
-                    {item.title ?? "Email Notification"}
-                  </span>
-                  <span style={{
-                    color: "#BABABA",
-                    fontSize: 13,
-                    fontWeight: 400,
-                    letterSpacing: 0.1,
-                    marginTop: 1,
-                  }}>
-                    {item.message ?? "Lorem ipsum dolor sit amet, put all your content"}
-                  </span>
-                  <span style={{ color: "#6C7B6A", fontSize: 12, marginTop: 2 }}>
-                    {formatDate(item.createdAt)}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
             {/* Pagination */}
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
                 <Pagination

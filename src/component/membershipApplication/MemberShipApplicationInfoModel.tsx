@@ -67,7 +67,7 @@ export const MemberShipApplicationInfoModel: React.FC<{
             {application.phone}
           </Descriptions.Item>
           <Descriptions.Item label="Address">
-            {application.address}
+            {application.address ?? "-"}
           </Descriptions.Item>
           <Descriptions.Item label="Status">
             <span

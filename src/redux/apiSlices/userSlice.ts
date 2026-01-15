@@ -11,6 +11,7 @@ const userSlice = api.injectEndpoints({
                     method: "GET",
                 };
             },
+            
         }),
         changeStatusUser: builder.mutation({
             query: ({id}:{id:string}) => {
@@ -29,7 +30,17 @@ const userSlice = api.injectEndpoints({
                     formData: true,
                 };
             },
-            invalidatesTags: [TagTypes.user], // Added tag invalidation for User
+            invalidatesTags: [TagTypes.user], 
+        }),
+        updateSingleUser: builder.mutation({
+            query: ({ id, formData }: { id: string; formData: FormData }) => {
+                return {
+                    method: "PATCH",
+                    url: `/user/single-user/${id}`,
+                    body: formData,
+                    formData: true,
+                };
+            },
         }),
         changePassword: builder.mutation({
             query: ({
@@ -80,4 +91,4 @@ const userSlice = api.injectEndpoints({
         }),
     }),
 });
-export const {useGetUsersQuery, useChangeStatusUserMutation,useGetHostsQuery, useGetStatisticsQuery, useGetUserStatisticsQuery, useUpdateUserMutation,useChangePasswordMutation } = userSlice;
+export const {useGetUsersQuery, useChangeStatusUserMutation,useGetHostsQuery, useGetStatisticsQuery, useGetUserStatisticsQuery, useUpdateUserMutation,useChangePasswordMutation, useUpdateSingleUserMutation } = userSlice;

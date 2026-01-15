@@ -1,4 +1,4 @@
-import { Button, Form, Input, Modal, Upload, Switch, InputNumber, Select } from "antd";
+import { Button, Form, Input, Modal, Upload, Switch, InputNumber, Select, message } from "antd";
 import { useEffect, useState, useMemo } from "react";
 import type { ExclusiveOfferType } from ".";
 import Editor from "react-simple-wysiwyg";
@@ -63,37 +63,57 @@ export const ExclusiveOfferModel: React.FC<{
   }, [editEvent, form]);
 
   const handleSubmit = async () => {
-    const values = await form.validateFields();
-    const formData = new FormData();
+    try {
+      const values = await form.validateFields();
+      const formData = new FormData();
 
-    formData.append("name", values.name);
-    formData.append("title", values.title);
-    formData.append("address", values.address);
-    formData.append("description", html || "");
-    if (values.category) {
-      formData.append("category", values.category);
-    }
-    // Discount state
-    formData.append("discount[enable]", String(!!values.discountEnable));
-    formData.append(
-      "discount[value]",
-      !!values.discountEnable ? String(values.discountValue || 0) : "0"
-    );
-    // Only pass file if uploading new
-    if (fileList.length > 0 && fileList[0].originFileObj) {
-      formData.append("image", fileList[0].originFileObj);
-    }
+      formData.append("name", values.name);
+      formData.append("title", values.title);
+      formData.append("address", values.address);
+      formData.append("description", html || "");
+      if (values.category) {
+        formData.append("category", values.category);
+      }
+      // Discount state
+      formData.append("discount[enable]", String(!!values.discountEnable));
+      formData.append(
+        "discount[value]",
+        !!values.discountEnable ? String(values.discountValue || 0) : "0"
+      );
+      // Only pass file if uploading new
+      if (fileList.length > 0 && fileList[0].originFileObj) {
+        formData.append("image", fileList[0].originFileObj);
+      }
 
-    if (editEvent) {
-      await onUpdate(editEvent._id, formData);
-    } else {
-      await onAdd(formData);
+      if (editEvent) {
+        await onUpdate(editEvent._id, formData);
+      } else {
+        await onAdd(formData);
+      }
+      form.resetFields();
+      setFileList([]);
+      setHtml("");
+      setDiscountEnable(false);
+    } catch (e: any) {
+      // Ant Design form validation errors are shown inline, only show toast for API/server errors
+      if (e && e.errorFields) {
+        return;
+      }
+
+      // Attempt to extract error message from API/server error
+      let errorMsg =
+        (e && e.data && (e.data.message || e.data.error)) ||
+        (e && e.message) ||
+        undefined;
+
+      if (errorMsg && typeof errorMsg === "string") {
+        message.error(errorMsg);
+      } else {
+        message.error("An error occurred. Please check your input and try again.");
+      }
     }
-    form.resetFields();
-    setFileList([]);
-    setHtml("");
-    setDiscountEnable(false);
   };
+
 
   return (
     <Modal

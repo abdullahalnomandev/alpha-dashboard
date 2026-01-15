@@ -16,6 +16,7 @@ import { handleLogout } from "../services/auth.service";
 import { useProfileQuery } from "../redux/apiSlices/authSlice";
 import { imageUrl } from "../redux/api/baseApi";
 import logo from '../assets/alpha_logo.svg'
+import { useClearNotificationsMutation, useGetNotificationCountQuery } from "../redux/apiSlices/notificationSlice";
 
 const { Sider, Header, Content } = Layout;
 const { Text } = Typography;
@@ -81,63 +82,6 @@ const logoutKey = LOGOUT_ITEM.key;
 
 const siderWidth = 240;
 
-// function findMenuItemByPath(menuConfig: any[], pathname: string): string | null {
-//   // search recursively for matching (exact or prefix) path
-//   let matched: string | null = null;
-//   function dfs(items: any[]) {
-//     for (let item of items) {
-//       if (item.path && item.path === pathname) {
-//         matched = item.key;
-//         return;
-//       }
-//       if (item.children) dfs(item.children);
-//     }
-//   }
-//   dfs(menuConfig);
-//   if (matched) return matched;
-
-//   // fallback to prefix match (for nested)
-//   function dfsPrefix(items: any[]) {
-//     for (let item of items) {
-//       if (item.path && item.path !== "/" && pathname.startsWith(item.path)) {
-//         matched = item.key;
-//         return;
-//       }
-//       if (item.children) dfsPrefix(item.children);
-//     }
-//   }
-//   dfsPrefix(menuConfig);
-//   if (matched) return matched;
-
-//   // check '/' at root
-//   function dfsRoot(items: any[]) {
-//     for (let item of items) {
-//       if (item.path === "/" && pathname === "/") {
-//         matched = item.key;
-//         return;
-//       }
-//       if (item.children) dfsRoot(item.children);
-//     }
-//   }
-//   dfsRoot(menuConfig);
-//   if (matched) return matched;
-
-//   // fallback: any prefix
-//   function dfsAnyPrefix(items: any[]) {
-//     for (let item of items) {
-//       if (item.path && pathname.startsWith(item.path)) {
-//         matched = item.key;
-//         return;
-//       }
-//       if (item.children) dfsAnyPrefix(item.children);
-//     }
-//   }
-//   dfsAnyPrefix(menuConfig);
-//   if (matched) return matched;
-
-//   // fallback: first item's key (if present)
-//   return menuConfig[0]?.key ?? "";
-// }
 
 // Returns array of selected keys by finding the deepest match for current path
 function findSelectedMenuKeys(menuConfig: any[], pathname: string): string[] {
@@ -222,11 +166,12 @@ function useIsMobile(breakpoint: number = 768): boolean {
 }
 
 const DashboardLayout: React.FC = () => {
-  const { data: profile } = useProfileQuery(undefined, {
-    refetchOnFocus: false,
-    refetchOnReconnect: false,
-    refetchOnMountOrArgChange: false,
-  });
+  const { data: profile } = useProfileQuery(undefined);
+
+ const {data} = useGetNotificationCountQuery(null)
+ const [clearNotifications] = useClearNotificationsMutation();
+ const notificationCount = data?.data?.count;
+
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -279,7 +224,7 @@ const DashboardLayout: React.FC = () => {
       style={{
         display: "flex",
         flexDirection: "column",
-        height: `calc(100% - ${isMobile ? 129 : 140}px)`,
+        height: `calc(100% - ${isMobile ? 175 : 165}px)`,
         overflow: "auto",
         minHeight: 0,
       }}
@@ -335,6 +280,14 @@ const DashboardLayout: React.FC = () => {
     return result;
   }
 
+  // Call clearNotifications mutation (from notificationSlice) and await for completion
+  // The correct usage in component:
+
+  const handleClearNotification = async () => {
+   await  clearNotifications(null)
+   navigate('/notifications');
+  }
+
   return (
     <Layout
       style={{
@@ -358,7 +311,7 @@ const DashboardLayout: React.FC = () => {
             {/* Logo/Header */}
             <div
               style={{
-                height: 64,
+                height: 100,
                 display: "flex",
                 alignItems: "center",
                 paddingInline: 24,
@@ -384,7 +337,7 @@ const DashboardLayout: React.FC = () => {
                   src={logo}
                   alt="Logo"
                   style={{
-                    height: 40,
+                    height: 80,
                     display: "block",
                   }}
                 />
@@ -430,7 +383,7 @@ const DashboardLayout: React.FC = () => {
           {/* Logo/Header */}
           <div
             style={{
-              height: 80,
+              height: 100,
               display: "flex",
               alignItems: "center",
               paddingInline: 24,
@@ -453,7 +406,7 @@ const DashboardLayout: React.FC = () => {
                 src={logo}
                 alt="Logo"
                 style={{
-                  height: 56,
+                  height: 80,
                   display: "block",
                 }}
               />
@@ -539,11 +492,23 @@ const DashboardLayout: React.FC = () => {
               gap: isMobile ? 12 : 24,
             }}
           >
-            <Link to="/notifications">
-              <Badge count={0} size="small" color="#84cc16">
+            <Button
+              type="text"
+              style={{ boxShadow: "none" }}
+              onClick={ handleClearNotification}
+            >
+              <Badge
+                count={
+                  typeof notificationCount === "number" && notificationCount !== 0
+                    ? notificationCount
+                    : undefined
+                }
+                size="small"
+                color="red"
+              >
                 <BellOutlined style={{ color: "#64748b", fontSize: 18 }} />
               </Badge>
-            </Link>
+            </Button>
             <div
               style={{
                 display: isMobile ? "none" : "flex",

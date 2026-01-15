@@ -20,7 +20,8 @@ import {
 import { useChangePasswordMutation, useProfileQuery } from "../../redux/apiSlices/authSlice";
 import { imageUrl } from "../../redux/api/baseApi";
 import {
-  useUpdateUserMutation} from "../../redux/apiSlices/userSlice";
+  useUpdateUserMutation
+} from "../../redux/apiSlices/userSlice";
 
 const { Title, Text } = Typography;
 
@@ -94,10 +95,17 @@ export default function Profile() {
     confirm: false,
   });
 
-  const [profileValues, setProfileValues] = useState({
+  // Add role property properly in state
+  const [profileValues, setProfileValues] = useState<{
+    name: string;
+    email: string;
+    contact: string;
+    role: string;
+  }>({
     name: "",
     email: "",
     contact: "",
+    role: "",
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -109,6 +117,7 @@ export default function Profile() {
       name: userProfile?.data?.name || "",
       email: userProfile?.data?.email || "",
       contact: userProfile?.data?.phone || "",
+      role: userProfile?.data?.role || "",
     });
     setPreviewImage(undefined);
     setImageFile(null);
@@ -214,6 +223,7 @@ export default function Profile() {
             setProfileValues({
               ...profileValues,
               [field.name]: e.target.value,
+              role: profileValues.role, // Keep role unchanged
             });
             setProfileErrors({ ...profileErrors, [field.name]: null });
           }}
@@ -300,11 +310,9 @@ export default function Profile() {
       </div>
     ));
 
-  // --- CORRECTED getProfileImageSrc function ---
   const getProfileImageSrc = () => {
     if (previewImage) return previewImage;
     if (userProfile?.data?.profileImage) {
-      // If profileImage starts with http/https, return as is, otherwise prepend imageUrl
       const img = userProfile.data.profileImage;
       if (/^https?:\/\//.test(img)) {
         return img;
@@ -315,11 +323,9 @@ export default function Profile() {
     return "https://noman1.netlify.app/_next/image?url=%2F_next%2Fstatic%2Fmedia%2FAbdullah_Al_Noman.c5d6012f.jpg&w=640&q=75";
   };
 
-  // --- CORRECTED handleImageChange function (accept image types) ---
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Accept standard image MIME types instead of "profileImage/"
     if (!file.type.startsWith("image/")) {
       message.error("Selected file is not a valid image");
       return;
@@ -418,6 +424,14 @@ export default function Profile() {
             </Title>
             <Text style={{ fontSize: 14, color: "#8c8c8c" }}>
               {profileValues.email}
+            </Text>
+            <Text style={{ fontSize: 13, color: "#6a6a6a", marginTop: 4 }}>
+              Role:{" "}
+              <span style={{ fontWeight: 600, color: "#1890ff", textTransform: "capitalize" }}>
+                {profileValues.role
+                  ? profileValues.role.replace(/_/g, " ")
+                  : "User"}
+              </span>
             </Text>
           </div>
 
