@@ -6,8 +6,9 @@ import {
   Badge,
   Drawer,
   Button,
+  Dropdown,
 } from "antd";
-import { BellOutlined, LogoutOutlined, MenuOutlined } from "@ant-design/icons";
+import { BellOutlined, LogoutOutlined, MenuOutlined, UserOutlined } from "@ant-design/icons";
 import { Outlet, useNavigate, useLocation, Link } from "react-router-dom";
 import type { MenuProps } from "antd";
 import React from "react";
@@ -168,10 +169,9 @@ function useIsMobile(breakpoint: number = 768): boolean {
 const DashboardLayout: React.FC = () => {
   const { data: profile } = useProfileQuery(undefined);
 
- const {data} = useGetNotificationCountQuery(null)
- const [clearNotifications] = useClearNotificationsMutation();
- const notificationCount = data?.data?.count;
-
+  const { data } = useGetNotificationCountQuery(null);
+  const [clearNotifications] = useClearNotificationsMutation();
+  const notificationCount = data?.data?.count;
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -187,13 +187,10 @@ const DashboardLayout: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = React.useState(false);
 
   // OpenKeys state for submenu management
-  // Use controlled openKeys with proper onOpenChange for Sider menu (desktop)
-  // But NOT for Drawer/mobile, since closing the drawer resets everything anyway
   const [openKeys, setOpenKeys] = React.useState<string[]>(
     selectedMenuKeys.length > 1 ? selectedMenuKeys.slice(0, -1) : []
   );
 
-  // Keep openKeys in sync with the current selected route (except for mobile/drawer)
   React.useEffect(() => {
     if (!isMobile) {
       setOpenKeys(selectedMenuKeys.length > 1 ? selectedMenuKeys.slice(0, -1) : []);
@@ -214,11 +211,22 @@ const DashboardLayout: React.FC = () => {
     handleLogout();
   };
 
-  // Submenu open change handler for desktop (Sider), enables submenu toggling
+  const handleProfileMenuClick: MenuProps['onClick'] = (info) => {
+    switch (info.key) {
+      case 'profile':
+        navigate('/profile');
+        break;
+      case 'logout':
+        handleLogout();
+        break;
+      default:
+        break;
+    }
+  };
+
   const onMenuOpenChange = (keys: string[]) => setOpenKeys(keys);
 
   // --- SIDER CONTENT FACTORY ---
-  // For Drawer/mobile, fallback to auto-controlled openKeys (AntD default, so omit openKeys prop)
   const SidebarContent = (
     <div
       style={{
@@ -281,12 +289,69 @@ const DashboardLayout: React.FC = () => {
   }
 
   // Call clearNotifications mutation (from notificationSlice) and await for completion
-  // The correct usage in component:
-
   const handleClearNotification = async () => {
-   await  clearNotifications(null)
-   navigate('/notifications');
+    await clearNotifications(null);
+    navigate('/notifications');
   }
+
+  // Dropdown menu for the profile avatar+name
+  // Reformatted for Antd 5.x Dropdown
+  const profileMenuItems: MenuProps['items'] = [
+    {
+      key: "name",
+      label: (
+        <span style={{ fontWeight: 600, display: "flex", alignItems: "center" }}>
+          <UserOutlined style={{ marginRight: 8 }} />
+          {profile?.data?.name}
+        </span>
+      ),
+      disabled: true,
+    },
+    {
+      key: "profile",
+      icon: <UserOutlined />,
+      label: "Profile",
+    },
+    {
+      type: 'divider',
+    },
+    {
+      key: "logout",
+      icon: <LogoutOutlined style={{ color: "red" }} />,
+      label: "Log out",
+    },
+  ];
+
+  // use both Desktop/Mobile Dropdown handler
+  const renderProfileDropdown = () => (
+    <Dropdown
+      menu={{ items: profileMenuItems, onClick: handleProfileMenuClick }}
+      trigger={['click']}
+      placement="bottomRight"
+      arrow
+    >
+      <div
+        style={{
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        <Avatar
+          src={
+            profile?.data?.profileImage &&
+            profile.data.profileImage.startsWith("http")
+              ? profile.data.profileImage
+              : profile?.data?.profileImage
+              ? `${imageUrl}/${profile.data.profileImage}`
+              : undefined
+          }
+        />
+        {/* Do not show name in navbar, name only appears inside dropdown */}
+      </div>
+    </Dropdown>
+  );
 
   return (
     <Layout
@@ -495,7 +560,7 @@ const DashboardLayout: React.FC = () => {
             <Button
               type="text"
               style={{ boxShadow: "none" }}
-              onClick={ handleClearNotification}
+              onClick={handleClearNotification}
             >
               <Badge
                 count={
@@ -509,34 +574,8 @@ const DashboardLayout: React.FC = () => {
                 <BellOutlined style={{ color: "#64748b", fontSize: 18 }} />
               </Badge>
             </Button>
-            <div
-              style={{
-                display: isMobile ? "none" : "flex",
-                alignItems: "center",
-                gap: 8,
-              }}
-            >
-              <div
-                style={{
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-                onClick={() => navigate("/profile")}
-              >
-                <Avatar
-                  src={
-                    profile.data.profileImage.startsWith("http")
-                      ? profile.data.profileImage
-                      : `${imageUrl}/${profile.data.profileImage}`
-                  }
-                />
-                <Text style={{ color: "#222", fontWeight: 500 }}>
-                  {profile?.data?.name}
-                </Text>
-              </div>
-            </div>
+            {/* Avatar + Name dropdown; avatar only in navbar, name appears only inside dropdown for both mobile and desktop */}
+            {renderProfileDropdown()}
           </div>
         </Header>
         {/* Main Content Padding for fixed header */}
