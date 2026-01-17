@@ -230,8 +230,7 @@ export const MemberShipPlanModalInfo: React.FC<MemberShipPlanModalInfoProps> = (
             fontWeight: 600
           }}>
             {(plan.membershipType || "")
-              .replace(/[-_]/g, ' ')     // Replace hyphens and underscores with spaces
-              .toUpperCase()} Membership
+              .replace(/[-_]/g, ' ')?.toUpperCase()} Membership
           </Text>
         </div>
       )}

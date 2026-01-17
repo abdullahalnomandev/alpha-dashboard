@@ -18,7 +18,7 @@ function extractRoutes(menu: typeof MENU_CONFIG = MENU_CONFIG) {
         recurse(item.children);
       } else if (item.path && item.element) {
         routes.push({
-          path: item.path.replace(/^\//, ""),
+          path: item.path?.replace(/^\//, ""),
           element: item.element,
         });
       }

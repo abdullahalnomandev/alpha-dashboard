@@ -141,7 +141,7 @@ const User: React.FC = () => {
         dataIndex: ["application_form", "membershipType"],
         render: (_: any, record: UserType) =>
           record.application_form?.membershipType
-            ? record.application_form.membershipType.replace(/_/g, " ")
+            ? record.application_form.membershipType?.replace(/_/g, " ")
             : "-",
       },
       {

@@ -15,7 +15,7 @@ export const ExclusiveOfferInfoModal: React.FC<{
     "image" in data && (data as any).image
       ? (data as any).image?.startsWith("http")
         ? (data as any).image
-        : imageUrl + "/" + ((data as any).image || "").replace(/^\/+/, "")
+        : imageUrl + "/" + ((data as any)?.image || "")?.replace(/^\/+/, "")
       : null;
 
   // Determine location (address or similar field)
@@ -186,7 +186,7 @@ export const ExclusiveOfferInfoModal: React.FC<{
                   ? (data as any).termsAndConditions
                   : ((data as any).terms || "").split(/\n|\. /).filter((t: string) => t.trim())
                 ).map((term: string, i: number) => (
-                  <li key={i}>{term.trim().replace(/^\s*[-–•✓\u2713]+\s*/, "")}</li>
+                  <li key={i}>{term.trim()?.replace(/^\s*[-–•✓\u2713]+\s*/, "")}</li>
                 ))}
               </ul>
             </div>

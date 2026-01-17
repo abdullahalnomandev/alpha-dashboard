@@ -317,7 +317,7 @@ const ResetPassword: React.FC = () => {
               <OtpInput
                 value={otpRaw}
                 onChange={val => {
-                  setOtpRaw(val.replace(/\D/g, "").slice(0, OTP_LENGTH));
+                  setOtpRaw(val?.replace(/\D/g, "").slice(0, OTP_LENGTH));
                 }}
                 autoFocus
               />

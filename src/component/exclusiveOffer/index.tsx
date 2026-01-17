@@ -125,7 +125,7 @@ const ExclusiveOffer: React.FC = () => {
           src ? (
             <img
               src={
-                src.startsWith("http") ? src : `${imageUrl}/${src.replace(/^\/+/, "")}`
+                src.startsWith("http") ? src : `${imageUrl}/${src?.replace(/^\/+/, "")}`
               }
               alt="image"
               style={{

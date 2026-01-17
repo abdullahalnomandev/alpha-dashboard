@@ -239,7 +239,7 @@ const MembershipApplication: React.FC = () => {
             { fontSize: 15 }; // fallback style for other types
           return (
             <span style={style}>
-              {v.replace(/_/g, " ")}
+              {v?.replace(/_/g, " ")}
             </span>
           );
         },

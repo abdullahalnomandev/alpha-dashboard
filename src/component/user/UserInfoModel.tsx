@@ -72,7 +72,7 @@ export const UserInfoModal: React.FC<{
           </Descriptions.Item>
           <Descriptions.Item label="Membership">
             {user.application_form?.membershipType
-              ? user.application_form.membershipType.replace(/_/g, " ")
+              ? user.application_form.membershipType?.replace(/_/g, " ")
               : "-"}
           </Descriptions.Item>
           <Descriptions.Item label="Created At">

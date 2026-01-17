@@ -52,7 +52,7 @@ export const MemberShipApplicationInfoModel: React.FC<{
                 };
               return (
                 <span style={style}>
-                  {application.membershipType.replace(/_/g, " ")}
+                  {application.membershipType?.replace(/_/g, " ")}
                 </span>
               );
             })()}

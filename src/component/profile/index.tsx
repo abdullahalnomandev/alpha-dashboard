@@ -429,7 +429,7 @@ export default function Profile() {
               Role:{" "}
               <span style={{ fontWeight: 600, color: "#1890ff", textTransform: "capitalize" }}>
                 {profileValues.role
-                  ? profileValues.role.replace(/_/g, " ")
+                  ? profileValues.role?.replace(/_/g, " ")
                   : "User"}
               </span>
             </Text>
