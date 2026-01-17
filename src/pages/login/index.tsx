@@ -10,6 +10,7 @@ import {
 import { Link } from "react-router-dom";
 import { setToLocalStorage } from "../../services/auth.service";
 import { useLoginMutation } from "../../redux/apiSlices/authSlice";
+import logo from "../../assets/alpha_logo.svg";
 
 const { Text, Title } = Typography;
 
@@ -92,7 +93,7 @@ const LoginPage: React.FC = () => {
           }}
         >
           <img
-            src="./src/assets/alpha_logo.svg"
+            src={logo}
             alt="Logo"
             style={{
               width: 54,
