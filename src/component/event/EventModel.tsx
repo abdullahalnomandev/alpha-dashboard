@@ -1,4 +1,4 @@
-import { Button, DatePicker, Form, Input, Modal, TimePicker, Upload } from "antd";
+import { DatePicker, Form, Input, Modal, TimePicker, Upload } from "antd";
 import { useEffect, useState } from "react";
 import type { EventType } from ".";
 import dayjs from "dayjs";
@@ -7,6 +7,7 @@ import Editor from "react-simple-wysiwyg";
 import { UploadOutlined } from "@ant-design/icons";
 import { imageUrl } from "../../redux/api/baseApi";
 
+const { Dragger } = Upload;
 
 export const EventFormModal: React.FC<{
     open: boolean;
@@ -20,7 +21,7 @@ export const EventFormModal: React.FC<{
     const [fileList, setFileList] = useState<any[]>([]);
     // const [preview, setPreview] = useState<string | undefined>(undefined);
     const [html, setHtml] = useState<string>("");
-  
+
     useEffect(() => {
       if (editEvent) {
         form.setFieldsValue({
@@ -47,11 +48,11 @@ export const EventFormModal: React.FC<{
       }
       // eslint-disable-next-line
     }, [editEvent, form]);
-  
+
     const handleSubmit = async () => {
       const values = await form.validateFields();
       const formData = new FormData();
-  
+
       for (const k of Object.keys(values)) {
         if (k === "eventDate" && values[k]) {
           formData.append("eventDate", values[k].startOf("day").toISOString());
@@ -72,7 +73,7 @@ export const EventFormModal: React.FC<{
       if (fileList.length > 0 && fileList[0].originFileObj) {
         formData.append("image", fileList[0].originFileObj);
       }
-  
+
       if (editEvent) {
         await onUpdate(editEvent._id, formData);
       } else {
@@ -83,7 +84,7 @@ export const EventFormModal: React.FC<{
     //   setPreview(undefined);
       setHtml("");
     };
-  
+
     return (
       <Modal
         open={open}
@@ -156,7 +157,7 @@ export const EventFormModal: React.FC<{
             />
           </Form.Item>
           <Form.Item label="Image">
-            <Upload
+            <Dragger
               beforeUpload={(file) => {
                 const isJpgOrPng =
                   file.type === "image/jpeg" ||
@@ -165,10 +166,11 @@ export const EventFormModal: React.FC<{
                 if (!isJpgOrPng) {
                   Modal.error({
                     title: "Invalid file type",
-                    content: "Only .jpeg, .png, .jpg file supported",
+                    content: "Only .jpeg, .png, .jpg files are supported",
                   });
+                  return Upload.LIST_IGNORE;
                 }
-                return false;
+                return false; // Prevent upload auto, handle manually
               }}
               accept=".jpeg,.jpg,.png"
               fileList={
@@ -190,12 +192,21 @@ export const EventFormModal: React.FC<{
               }}
               listType="picture"
               maxCount={1}
+              style={{ padding: "8px 0" }}
             >
-              <Button icon={<UploadOutlined />}>Select Image</Button>
-            </Upload>
+              <p className="ant-upload-drag-icon">
+                <UploadOutlined style={{ color: "#1890ff", fontSize: 22 }} />
+              </p>
+              <p className="ant-upload-text">
+                Click or drag image to this area to upload
+              </p>
+              <p className="ant-upload-hint">
+                Only JPEG/PNG/JPG files are supported. Max one image.<br />
+                Recommended size: <strong>390 x 220</strong>
+              </p>
+            </Dragger>
           </Form.Item>
         </Form>
       </Modal>
     );
   };
-  

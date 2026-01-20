@@ -113,7 +113,7 @@ const MemberShipFeatures: React.FC = () => {
         render: (v: string) => <span title={v}>{v}</span>,
       },
       {
-        title: "Active",
+        title: "Published",
         dataIndex: "isActive",
         key: "isActive",
         align: "center",

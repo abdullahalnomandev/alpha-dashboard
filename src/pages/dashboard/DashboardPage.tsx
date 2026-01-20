@@ -109,6 +109,7 @@ function DashboardPage() {
   const cardData = [
     {
       icon: <PiUsersThree />,
+      path:'/users',
       label: "Total Members",
       value: data?.data?.totalUser ?? data?.totalUser ?? 0,
       iconBg: "#e5e7eb",
@@ -118,11 +119,13 @@ function DashboardPage() {
       label: "Active Offers",
       value: data?.data?.totalExclusiveOffer ?? data?.totalExclusiveOffer ?? 0,
       iconBg: "#F0E4C4",
+      path:'/offer',
       iconColor: "#C9961B",
     },
     {
       icon: <VscCalendar />,
       label: "Upcoming Events",
+      path:'/event',
       value: data?.data?.totalEvent ?? data?.totalEvent ?? 0,
       iconBg: "#00A63E1A",
       iconColor: "#00A63E",
@@ -132,6 +135,7 @@ function DashboardPage() {
       label: "Total Clubs",
       value: data?.data?.totalClubs ?? data?.totalClubs ?? 0,
       iconBg: "#9810FA1A",
+      path:'/club',
       iconColor: "#9810FA",
     },
   ];
@@ -140,8 +144,8 @@ function DashboardPage() {
     <Space direction="vertical" size={28} style={{ width: "100%" }}>
       {/* Top statistic cards */}
       <Row gutter={[20, 20]}>
-        {cardData.map((item) => (
-          <Col key={item.label} xs={24} sm={12} md={8} xl={6}>
+        {cardData.map((item) => {
+          const CardContent = (
             <div
               style={{
                 background: "#fff",
@@ -153,7 +157,10 @@ function DashboardPage() {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
+                cursor: item.path ? 'pointer' : 'default',
+                transition: item.path ? 'box-shadow 0.18s' : undefined,
               }}
+              className={item.path ? "dashboard-card-link" : ""}
             >
               <div>
                 <Text
@@ -194,8 +201,30 @@ function DashboardPage() {
                 {item.icon}
               </div>
             </div>
-          </Col>
-        ))}
+          );
+          return (
+            <Col key={item.label} xs={24} sm={12} md={8} xl={6}>
+              {item.path ? (
+                <a
+                  href={item.path}
+                  style={{ textDecoration: "none" }}
+                  tabIndex={0}
+                  aria-label={item.label}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.history.pushState({}, '', item.path);
+                    const navEvent = new PopStateEvent('popstate');
+                    window.dispatchEvent(navEvent);
+                  }}
+                >
+                  {CardContent}
+                </a>
+              ) : (
+                CardContent
+              )}
+            </Col>
+          );
+        })}
       </Row>
 
       {/* User statistics chart */}

@@ -26,7 +26,8 @@ import MemberShipFeaturesPage from "../pages/memberships/MemberShipFeaturesPage"
 import MemberShipPlanPage from "../pages/memberships/MemberShipPlanPage";
 import FaqPage from "../pages/settings/FaqPage";
 import ContactFormPage from "../pages/ContactFormPage";
-import { RiMailSendLine } from "react-icons/ri";
+import { RiFileList3Line, RiMailSendLine } from "react-icons/ri";
+import EventRegistrationPage from "../component/event-registration";
 
 
 export const MENU_CONFIG = [
@@ -64,6 +65,13 @@ export const MENU_CONFIG = [
     icon: <VscCalendar />,
     element: <EventPage />,
     path: '/event',
+  },
+  {
+    key: 'event-registration',
+    label: 'Event Registrations',
+    icon: <RiFileList3Line  />,
+    element: <EventRegistrationPage />,
+    path: '/event-registration',
   },
   {
     key: 'club',

@@ -1,5 +1,6 @@
-import { Button, Form, Input, Modal, Upload, Switch, InputNumber, Select, message } from "antd";
-import { useEffect, useState, useMemo } from "react";
+import {  Form, Input, Modal, Upload, Switch, InputNumber, Select, message } from "antd";
+import type { UploadFile } from "antd/es/upload/interface";
+import { useEffect, useState, useMemo, useRef } from "react";
 import type { ExclusiveOfferType } from ".";
 import Editor from "react-simple-wysiwyg";
 import { UploadOutlined } from "@ant-design/icons";
@@ -17,8 +18,9 @@ export const ExclusiveOfferModel: React.FC<{
   onUpdate: (id: string, formData: FormData) => Promise<void>;
 }> = ({ open, loading, editEvent, onClose, onAdd, onUpdate }) => {
   const [form] = Form.useForm();
-  const [fileList, setFileList] = useState<any[]>([]);
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [html, setHtml] = useState<string>("");
+  const [removedFiles, setRemovedFiles] = useState<string[]>([]);
 
   // Fetch offer categories with high enough limit to show all
   const { data, isLoading } = useGetOfferCategoriesQuery({ query: { page: 1, limit: 100 } });
@@ -38,8 +40,10 @@ export const ExclusiveOfferModel: React.FC<{
   // Discount switch state (for UI)
   const [discountEnable, setDiscountEnable] = useState<boolean>(false);
 
+  // Keep a ref to original image urls for removal reference
+  const originalImagesRef = useRef<{ [uid: string]: string }>({});
+
   useEffect(() => {
-    // Populate form fields if editing
     if (editEvent) {
       form.setFieldsValue({
         name: editEvent.name,
@@ -49,18 +53,63 @@ export const ExclusiveOfferModel: React.FC<{
         discountValue: editEvent.discount?.value ?? 0,
         discountEnable: !!editEvent.discount?.enable,
       });
-      // Preserve HTML description if provided from parent (extended type, fallback empty string)
       setHtml((editEvent as any).description || "");
       setDiscountEnable(!!editEvent.discount?.enable);
-      setFileList([]); // Will render display file with fileList below if image present
+
+      const existingImages = (editEvent as any).image;
+      let newFileList: UploadFile[] = [];
+      let origImagesMap: { [uid: string]: string } = {};
+      if (Array.isArray(existingImages)) {
+        newFileList = existingImages.map((img: string, idx: number) => {
+          const uid = String(-1 - idx);
+          origImagesMap[uid] = img; // original path for this upload item
+          return {
+            uid,
+            name: img.split("/").pop() || `image-${idx + 1}.png`,
+            status: "done",
+            url: `${imageUrl}/${img.replace(/^\/+/, "")}`,
+          };
+        });
+      } else if (typeof existingImages === "string") {
+        const uid = "-1";
+        origImagesMap[uid] = existingImages;
+        newFileList = [
+          {
+            uid,
+            name: existingImages.split("/").pop() || "image.png",
+            status: "done",
+            url: `${imageUrl}/${existingImages.replace(/^\/+/, "")}`,
+          },
+        ];
+      } else {
+        newFileList = [];
+      }
+      setFileList(newFileList);
+      originalImagesRef.current = origImagesMap;
+      setRemovedFiles([]); // clean state on edit swap
     } else {
       setFileList([]);
       form.resetFields();
       setHtml("");
       setDiscountEnable(false);
+      setRemovedFiles([]);
+      originalImagesRef.current = {};
     }
     // eslint-disable-next-line
   }, [editEvent, form]);
+
+  const handleRemove = (file: UploadFile) => {
+    // Only files with status 'done' and url (existing), track for removal
+    if (file.status === "done" && file.uid && originalImagesRef.current[file.uid]) {
+      setRemovedFiles((prev) => {
+        // Avoid duplicate removal
+        if (prev.includes(originalImagesRef.current[file.uid])) return prev;
+        return [...prev, originalImagesRef.current[file.uid]];
+      });
+    }
+    // Let Upload remove it from preview list, our onChange will sync with fileList
+    return true;
+  };
 
   const handleSubmit = async () => {
     try {
@@ -80,9 +129,19 @@ export const ExclusiveOfferModel: React.FC<{
         "discount[value]",
         !!values.discountEnable ? String(values.discountValue || 0) : "0"
       );
-      // Only pass file if uploading new
-      if (fileList.length > 0 && fileList[0].originFileObj) {
-        formData.append("image", fileList[0].originFileObj);
+
+      // Append all selected files; API can accept multiple "image" entries
+      fileList.forEach((file) => {
+        if (file.originFileObj) {
+          formData.append("image", file.originFileObj as File);
+        }
+      });
+
+      // If some files were removed, add the removal info
+      if (removedFiles.length > 0) {
+        removedFiles.forEach((imgPath) => {
+          formData.append("removedFiles[]", imgPath);
+        });
       }
 
       if (editEvent) {
@@ -94,6 +153,8 @@ export const ExclusiveOfferModel: React.FC<{
       setFileList([]);
       setHtml("");
       setDiscountEnable(false);
+      setRemovedFiles([]);
+      originalImagesRef.current = {};
     } catch (e: any) {
       // Ant Design form validation errors are shown inline, only show toast for API/server errors
       if (e && e.errorFields) {
@@ -218,7 +279,8 @@ export const ExclusiveOfferModel: React.FC<{
           />
         </Form.Item>
         <Form.Item label="Image">
-          <Upload
+          <Upload.Dragger
+            multiple
             beforeUpload={(file) => {
               const isJpgOrPng =
                 file.type === "image/jpeg" ||
@@ -233,28 +295,34 @@ export const ExclusiveOfferModel: React.FC<{
               return false;
             }}
             accept=".jpeg,.jpg,.png"
-            fileList={
-              fileList.length
-                ? fileList
-                : (editEvent && (editEvent as any).image)
-                ? [
-                    {
-                      uid: "-1",
-                      name: (editEvent as any).image.split("/").pop() || "image.png",
-                      status: "done",
-                      url: imageUrl + "/" + (editEvent as any).image,
-                    },
-                  ]
-                : []
-            }
+            fileList={fileList}
             onChange={(info) => {
-              setFileList(info.fileList.slice(-1));
+              setFileList(info.fileList);
+              // Note: Do not clear removedFiles here
             }}
             listType="picture"
-            maxCount={1}
+            onRemove={handleRemove}
+            style={{ width: "100%" }}
           >
-            <Button icon={<UploadOutlined />}>Select Image</Button>
-          </Upload>
+            <div
+              style={{
+                width: "100%",
+                minHeight: 150,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <UploadOutlined style={{ fontSize: 32, color: '#999' }} />
+              <p style={{ margin: 8, fontWeight: 500 }}>
+                Please upload an image <br />
+                <span style={{ color: "#888", fontWeight: 400, fontSize: 13 }}>
+                  Recommended size: <strong>390 x 220</strong>
+                </span>
+              </p>
+            </div>
+          </Upload.Dragger>
         </Form.Item>
       </Form>
     </Modal>

@@ -1,4 +1,4 @@
-import { Modal } from "antd";
+import { Carousel, Modal } from "antd";
 import type { ExclusiveOfferType } from ".";
 import { imageUrl } from "../../redux/api/baseApi";
 import { EnvironmentFilled } from "@ant-design/icons";
@@ -10,13 +10,17 @@ export const ExclusiveOfferInfoModal: React.FC<{
 }> = ({ open, data, onClose }) => {
   if (!data) return null;
 
-  // Compose image URL
-  const imageSrc =
-    "image" in data && (data as any).image
-      ? (data as any).image?.startsWith("http")
-        ? (data as any).image
-        : imageUrl + "/" + ((data as any)?.image || "")?.replace(/^\/+/, "")
-      : null;
+  // Normalize image field to an array of urls/paths
+  const rawImages = (data as any).image as string | string[] | undefined;
+  const images: string[] = Array.isArray(rawImages)
+    ? rawImages.filter(Boolean)
+    : typeof rawImages === "string" && rawImages
+    ? [rawImages]
+    : [];
+
+  const imageUrls = images.map((img) =>
+    img.startsWith("http") ? img : `${imageUrl}/${img.replace(/^\/+/, "")}`
+  );
 
   // Determine location (address or similar field)
   const locationStr =
@@ -46,19 +50,54 @@ export const ExclusiveOfferInfoModal: React.FC<{
         background: "#fff",
         fontFamily: "inherit"
       }}>
-        {/* Top: Image */}
-        <div style={{ width: "100%", height: 180, background: "#f6f8fa" }}>
-          {imageSrc ? (
-            <img
-              src={imageSrc}
-              alt="offer"
-              style={{
-                width: "100%",
-                height: 180,
-                objectFit: "cover",
-                borderRadius: "0 0 0 0"
-              }}
-            />
+        {/* Top: Images */}
+        <div
+          style={{
+            width: "100%",
+            marginTop: 20,
+            background: "#f6f8fa",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          {imageUrls.length ? (
+            <div style={{ width: "100%" }}>
+              <Carousel
+                dots
+                autoplay={imageUrls.length > 1}
+                autoplaySpeed={3000}
+                draggable
+                adaptiveHeight
+              >
+                {imageUrls.map((src, idx) => (
+                  <div key={`${src}-${idx}`}>
+                    <div
+                      style={{
+                        width: "100%",
+                        height: 280,
+                        background: "#f6f8fa",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <img
+                        src={src}
+                        alt={`offer-${idx + 1}`}
+                        style={{
+                          width: "100%",
+                          height: 280,
+                          objectFit: "contain",
+                          display: "block",
+                          background: "#f6f8fa",
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </Carousel>
+            </div>
           ) : (
             <div
               style={{
@@ -70,7 +109,7 @@ export const ExclusiveOfferInfoModal: React.FC<{
                 justifyContent: "center",
                 color: "#ccc",
                 fontSize: 22,
-                fontWeight: 500
+                fontWeight: 500,
               }}
             >
               No image
@@ -125,13 +164,17 @@ export const ExclusiveOfferInfoModal: React.FC<{
           }}>
             Description
           </div>
-          <div style={{
-            color: "#777D8F",
-            fontSize: 14,
-            marginBottom: 18,
-            marginTop: 2,
-            minHeight: 22
-          }}>
+          <div
+            style={{
+              color: "#777D8F",
+              fontSize: 14,
+              marginBottom: 18,
+              marginTop: 2,
+              minHeight: 22,
+              maxHeight: 300,
+              overflowY: "auto",
+            }}
+          >
             {"description" in data && (data as any).description ? (
               <span
                 style={{ display: "block" }}

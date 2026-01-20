@@ -9,6 +9,7 @@ import {
   Space,
   Popconfirm,
   Tooltip,
+  Switch, // Add Switch for toggle
 } from "antd";
 import type { TableColumnsType, TablePaginationConfig } from "antd";
 import { FiEdit, FiSearch } from "react-icons/fi";
@@ -43,6 +44,7 @@ export type StoryType = {
   createdAt?: string;
   description?: string;
   updatedAt?: string;
+  published?: boolean; // Add published property
 };
 
 // Main Page
@@ -132,6 +134,22 @@ const Stories: React.FC = () => {
         render: (v: string) =>
           v ? new Date(v).toLocaleString() : "-",
       },
+      // Add Published toggle column
+      {
+        title: "Published",
+        dataIndex: "published",
+        align: "center",
+        render: (published: boolean, record: StoryType) => (
+          <Switch
+            checked={!!published}
+            onChange={async (checked) => {
+              await updateStory({ id: record._id, data: { published: checked } }).unwrap();
+              message.success(`Story ${checked ? "published" : "unpublished"}`);
+              refetch();
+            }}
+          />
+        ),
+      },
       {
         title: "Action",
         align: "center",
@@ -208,6 +226,7 @@ const Stories: React.FC = () => {
       createdAt: story.createdAt,
       description: story.description,
       updatedAt: story.updatedAt,
+      published: typeof story.published === "boolean" ? story.published : false, // Include published property
     }));
   };
 
@@ -225,6 +244,7 @@ const Stories: React.FC = () => {
         likeCount: d.likeCount,
         createdAt: d.createdAt,
         updatedAt: d.updatedAt,
+        published: d.published,
       };
     }
     return null;
@@ -240,6 +260,7 @@ const Stories: React.FC = () => {
         club: d.club,
         image: d.image,
         description: d.description,
+        published: d.published,
       };
     }
     return null;

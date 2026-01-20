@@ -106,7 +106,7 @@ const MemberShipPlan: React.FC = () => {
             ),
       },
       {
-        title: "Active",
+        title: "Published",
         dataIndex: "isActive",
         align: "center",
         render: (active: boolean, record) => (

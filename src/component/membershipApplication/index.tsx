@@ -9,14 +9,11 @@ import {
   Space,
   Popconfirm,
   Tooltip,
-  Modal
+  Modal,
 } from "antd";
 import type { TableColumnsType, TablePaginationConfig } from "antd";
 import { FiEdit, FiSearch } from "react-icons/fi";
-import {
-  EyeOutlined,
-  DeleteOutlined,
-} from "@ant-design/icons";
+import { EyeOutlined, DeleteOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
 import {
@@ -27,7 +24,8 @@ import {
 } from "../../redux/apiSlices/membershipApplicationSlice";
 import { MemberShipApplicationInfoModel } from "./MemberShipApplicationInfoModel";
 import { MemberShipApplicationCreate } from "./MemberShipApplicationCreate";
-
+import { FaRegFileExcel } from "react-icons/fa6";
+import { handleExportToCsv } from "./utils/handleExportToCsv";
 const { Text } = Typography;
 
 /* =====================
@@ -35,7 +33,7 @@ const { Text } = Typography;
 ===================== */
 export type FamilyMember = {
   name: string;
-  email:string;
+  email: string;
   relation: string;
 };
 
@@ -62,7 +60,6 @@ const STATUS = {
   REJECTED: "rejected",
 };
 
-
 /* Colorful/Shadow for Status Buttons */
 const STATUS_STYLES: Record<string, React.CSSProperties> = {
   [STATUS.ACTIVE]: {
@@ -73,7 +70,7 @@ const STATUS_STYLES: Record<string, React.CSSProperties> = {
     borderRadius: 6,
     padding: "2px 10px",
     fontWeight: 500,
-    display: "inline-block"
+    display: "inline-block",
   },
   [STATUS.PENDING]: {
     color: "#faad14",
@@ -82,7 +79,7 @@ const STATUS_STYLES: Record<string, React.CSSProperties> = {
     borderRadius: 6,
     padding: "2px 10px",
     fontWeight: 500,
-    display: "inline-block"
+    display: "inline-block",
   },
   [STATUS.REJECTED]: {
     color: "#f5222d",
@@ -91,8 +88,8 @@ const STATUS_STYLES: Record<string, React.CSSProperties> = {
     borderRadius: 6,
     padding: "2px 10px",
     fontWeight: 500,
-    display: "inline-block"
-  }
+    display: "inline-block",
+  },
 };
 
 // Only color, fontWeight and fontSize kept as per instruction
@@ -153,13 +150,22 @@ const MembershipApplication: React.FC = () => {
   const query: Record<string, any> = { page, limit };
   if (search.trim()) query.searchTerm = search;
 
-  const { data, isLoading, refetch } = useGetMembershipApplicationsQuery({ query });
-  const [createApplication, { isLoading: createLoading }] = useCreateMembershipApplicationMutation();
-  const [updateApplication, { isLoading: updateLoading }] = useUpdateMembershipApplicationMutation();
-  const [deleteApplication, { isLoading: deleteLoading }] = useDeleteMembershipApplicationMutation();
+  const { data, isLoading, refetch } = useGetMembershipApplicationsQuery({
+    query,
+  });
+  const [createApplication, { isLoading: createLoading }] =
+    useCreateMembershipApplicationMutation();
+  const [updateApplication, { isLoading: updateLoading }] =
+    useUpdateMembershipApplicationMutation();
+  const [deleteApplication, { isLoading: deleteLoading }] =
+    useDeleteMembershipApplicationMutation();
+
 
   // Handler for accepting/rejecting with confirmation modal
-  const handleDecision = (type: "accept" | "reject", record: MembershipApplicationType) => {
+  const handleDecision = (
+    type: "accept" | "reject",
+    record: MembershipApplicationType
+  ) => {
     setDecisionModal({
       open: true,
       type,
@@ -205,7 +211,7 @@ const MembershipApplication: React.FC = () => {
         dataIndex: "sl",
         key: "sl",
         align: "center",
-        width: 64,
+        width: 80,
         render: (_: any, __: any, index: number) => {
           const serial = (page - 1) * limit + index + 1;
           return <span>{serial < 10 ? `0${serial}` : serial}</span>;
@@ -225,23 +231,15 @@ const MembershipApplication: React.FC = () => {
         title: "Name",
         dataIndex: "name",
         key: "name",
-        render: (v: string) => (
-          <Text style={{ fontSize: 16 }}>{v}</Text>
-        ),
+        render: (v: string) => <Text style={{ fontSize: 16 }}>{v}</Text>,
       },
       {
         title: "Membership Type",
         dataIndex: "membershipType",
         key: "membershipType",
         render: (v: string) => {
-          const style =
-            MEMBERSHIP_TYPE_STYLES[v] ||
-            { fontSize: 15 }; // fallback style for other types
-          return (
-            <span style={style}>
-              {v?.replace(/_/g, " ")}
-            </span>
-          );
+          const style = MEMBERSHIP_TYPE_STYLES[v] || { fontSize: 15 }; // fallback style for other types
+          return <span style={style}>{v?.replace(/_/g, " ")}</span>;
         },
       },
       {
@@ -260,14 +258,12 @@ const MembershipApplication: React.FC = () => {
         dataIndex: "membershipStatus",
         key: "membershipStatus",
         render: (status: string) => (
-          <span
-            style={STATUS_STYLES[status] || {}}
-          >
+          <span style={STATUS_STYLES[status] || {}}>
             {status.charAt(0).toUpperCase() + status.slice(1)}
           </span>
         ),
       },
-    
+
       {
         title: "Decision",
         dataIndex: "decision",
@@ -285,7 +281,7 @@ const MembershipApplication: React.FC = () => {
                   style={{
                     background: "#52c41a",
                     borderColor: "#52c41a",
-                    boxShadow: "0 2px 10px rgba(82,196,26,0.10)"
+                    boxShadow: "0 2px 10px rgba(82,196,26,0.10)",
                   }}
                 >
                   Accept
@@ -464,6 +460,16 @@ const MembershipApplication: React.FC = () => {
               size="large"
             />
           </div>
+          <div>
+            <Button
+              type="primary"
+              size="large"
+              icon={<FaRegFileExcel style={{ fontSize: 18, marginRight: 6 }} />}
+              onClick={() => handleExportToCsv()}
+            >
+              Export as CSV
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -478,9 +484,7 @@ const MembershipApplication: React.FC = () => {
           pagination={pagination}
           loading={isLoading}
           scroll={
-            window.innerWidth < 600
-              ? undefined
-              : { y: `calc(100vh - 320px)` }
+            window.innerWidth < 600 ? undefined : { y: `calc(100vh - 320px)` }
           }
         />
       </Spin>

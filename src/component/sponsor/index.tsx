@@ -9,6 +9,7 @@ import {
   Space,
   Popconfirm,
   Tooltip,
+  Switch,
 } from "antd";
 import type { TableColumnsType, TablePaginationConfig } from "antd";
 import { FiEdit, FiSearch } from "react-icons/fi";
@@ -44,6 +45,7 @@ export type SponsorType = {
   image?: string;
   createdAt?: string;
   updatedAt?: string;
+  publishing?: boolean;
 };
 
 /* =====================
@@ -87,6 +89,22 @@ const Sponsor: React.FC = () => {
     skip: !formOpen || !editId || isAddMode,
   });
 
+  // Handle toggle "published" status
+  const handleTogglePublished = async (record: SponsorType, checked: boolean) => {
+    try {
+      // Some APIs treat string 'false' as true, so be strict with boolean type
+      const formData = new FormData();
+      // Always pass actual boolean, not string or '0'/'1'
+      formData.append("publishing", checked ? "true" : "false");
+
+      await updateSponsor({ id: record._id, formData }).unwrap();
+      message.success(`Sponsor ${checked ? "published" : "unpublished"}`);
+      refetch();
+    } catch (e) {
+      message.error("Failed to change published status");
+    }
+  };
+
   const columns: TableColumnsType<SponsorType> = useMemo(
     () => [
       {
@@ -122,6 +140,30 @@ const Sponsor: React.FC = () => {
         dataIndex: "location",
         render: (v: string) =>
           v && v.trim().length > 0 ? v : <span style={{ color: "#aaa" }}>No location</span>,
+      },
+      {
+        title: "Published",
+        dataIndex: "publishing",
+        align: "center",
+        render: (_: boolean, record: SponsorType) => {
+          // Some APIs return publishing as "true"/"false" or 1/0 instead of strict boolean
+          // Normalize it for correct switch
+          let checkedVal: boolean = false;
+          if (typeof record.publishing === "boolean") {
+            checkedVal = record.publishing;
+          } else if (typeof record.publishing === "string") {
+            checkedVal = record.publishing === "true" || record.publishing === "1";
+          } else if (typeof record.publishing === "number") {
+            checkedVal = record.publishing === 1;
+          }
+          return (
+            <Switch
+              checked={checkedVal}
+              loading={updateLoading}
+              onChange={(checked) => handleTogglePublished(record, checked)}
+            />
+          );
+        },
       },
       {
         title: "Action",
@@ -191,16 +233,28 @@ const Sponsor: React.FC = () => {
 
   // Filter and format sponsor objects with necessary fields:
   const formatSponsorData = (rawData: any[] = []) => {
-    return rawData.map((sponsor) => ({
-      _id: sponsor._id,
-      logo: sponsor.logo,
-      title: sponsor.title,
-      location: sponsor.location,
-      description: sponsor.description,
-      image: sponsor.image,
-      createdAt: sponsor.createdAt,
-      updatedAt: sponsor.updatedAt,
-    }));
+    return rawData.map((sponsor) => {
+      // Normalize publishing to boolean if possible, otherwise leave untouched for compatibility
+      let normalizedPublishing: boolean | undefined = undefined;
+      if (typeof sponsor.publishing === "boolean") {
+        normalizedPublishing = sponsor.publishing;
+      } else if (typeof sponsor.publishing === "string") {
+        normalizedPublishing = sponsor.publishing === "true" || sponsor.publishing === "1";
+      } else if (typeof sponsor.publishing === "number") {
+        normalizedPublishing = sponsor.publishing === 1;
+      }
+      return {
+        _id: sponsor._id,
+        logo: sponsor.logo,
+        title: sponsor.title,
+        location: sponsor.location,
+        description: sponsor.description,
+        image: sponsor.image,
+        createdAt: sponsor.createdAt,
+        updatedAt: sponsor.updatedAt,
+        publishing: normalizedPublishing,
+      };
+    });
   };
 
   return (
@@ -239,6 +293,15 @@ const Sponsor: React.FC = () => {
                   // This will log the image field if present, as per the spec
                   // eslint-disable-next-line no-console
                   console.log("Inserted image value just", editSponsorDetails.data.image);
+                  // Handle publishing flag as strictly boolean
+                  let normalizedPublishing: boolean | undefined = undefined;
+                  if (typeof editSponsorDetails.data.publishing === "boolean") {
+                    normalizedPublishing = editSponsorDetails.data.publishing;
+                  } else if (typeof editSponsorDetails.data.publishing === "string") {
+                    normalizedPublishing = editSponsorDetails.data.publishing === "true" || editSponsorDetails.data.publishing === "1";
+                  } else if (typeof editSponsorDetails.data.publishing === "number") {
+                    normalizedPublishing = editSponsorDetails.data.publishing === 1;
+                  }
                   return {
                     _id: editSponsorDetails.data._id,
                     title: editSponsorDetails.data.title,
@@ -248,6 +311,7 @@ const Sponsor: React.FC = () => {
                     description: editSponsorDetails.data.description,
                     createdAt: editSponsorDetails.data.createdAt,
                     updatedAt: editSponsorDetails.data.updatedAt,
+                    publishing: normalizedPublishing,
                   };
                 })()
               : null

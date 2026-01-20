@@ -45,6 +45,8 @@ export type ExclusiveOfferType = {
     name: string;
   };
   isFavourite?: boolean;
+  published?: boolean;
+  image?: string | string[];
   [key: string]: any;
 };
 
@@ -74,7 +76,25 @@ const ExclusiveOffer: React.FC = () => {
   const [deleteExclusiveOffer, { isLoading: deleteLoading }] =
     useDeleteOfferMutation();
 
-  // Toggle enable/disable discount
+  // Only update "published" when toggling published switch
+  const handleTogglePublished = useCallback(
+    async (record: ExclusiveOfferType, checked: boolean) => {
+      try {
+        const formData = new FormData();
+        formData.append("published", String(checked));
+        await updateExclusiveOffer({ id: record._id, formData }).unwrap();
+        message.success(
+          `Offer ${checked ? "published" : "unpublished"}`
+        );
+        refetch();
+      } catch (e) {
+        message.error("Failed to update published status");
+      }
+    },
+    [updateExclusiveOffer, refetch]
+  );
+
+  // Toggle enable/disable discount (keep original logic for discount only)
   const handleToggleDiscount = useCallback(
     async (record: ExclusiveOfferType, checked: boolean) => {
       try {
@@ -99,9 +119,17 @@ const ExclusiveOffer: React.FC = () => {
           );
         }
 
-        // If editItem may have .image and it is a string, try passing as current image if needed
-        if ((record as any).image && typeof (record as any).image === "string") {
-          formData.append("image", (record as any).image);
+        // If record.image is array, append all images; if string, append as usual
+        if (Array.isArray(record.image)) {
+          // The backend might expect a field like image[] or similar, but as per instruction, append all images
+          record.image.forEach((imgPath) => {
+            if (typeof imgPath === "string") {
+              // Use "image" key for each, unless backend expects "image[]"
+              formData.append("image", imgPath);
+            }
+          });
+        } else if (typeof record.image === "string") {
+          formData.append("image", record.image);
         }
 
         await updateExclusiveOffer({ id: record._id, formData }).unwrap();
@@ -121,11 +149,21 @@ const ExclusiveOffer: React.FC = () => {
       {
         title: "Image",
         dataIndex: "image",
-        render: (src: string, _) =>
-          src ? (
+        render: (src: string | string[] | undefined, _: ExclusiveOfferType) => {
+          let imagePath: string | undefined;
+          if (Array.isArray(src) && src.length > 0) {
+            imagePath = src[0];
+          } else if (typeof src === "string") {
+            imagePath = src;
+          } else {
+            imagePath = undefined;
+          }
+          return imagePath ? (
             <img
               src={
-                src.startsWith("http") ? src : `${imageUrl}/${src?.replace(/^\/+/, "")}`
+                imagePath.startsWith("http")
+                  ? imagePath
+                  : `${imageUrl}/${imagePath.replace(/^\/+/, "")}`
               }
               alt="image"
               style={{
@@ -137,7 +175,8 @@ const ExclusiveOffer: React.FC = () => {
             />
           ) : (
             <span style={{ color: "#ccc" }}>No logo</span>
-          ),
+          );
+        },
       },
       {
         title: "Name",
@@ -176,6 +215,18 @@ const ExclusiveOffer: React.FC = () => {
           ) : (
             <span style={{ color: "#bbb" }}>N/A</span>
           ),
+      },
+      {
+        title: "Published",
+        dataIndex: "published",
+        align: "center",
+        render: (published: boolean, record: ExclusiveOfferType) => (
+          <Switch
+            checked={!!published}
+            onChange={(checked) => handleTogglePublished(record, checked)}
+            disabled={updateLoading}
+          />
+        ),
       },
       {
         title: "Action",
@@ -228,7 +279,7 @@ const ExclusiveOffer: React.FC = () => {
         ),
       },
     ],
-    [updateLoading, deleteLoading, page, limit, handleToggleDiscount, refetch]
+    [updateLoading, deleteLoading, page, limit, handleToggleDiscount, handleTogglePublished, refetch]
   );
 
   const pagination: TablePaginationConfig = {
