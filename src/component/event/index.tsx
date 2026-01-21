@@ -30,6 +30,7 @@ import { imageUrl } from "../../redux/api/baseApi";
 import { EditorProvider } from "react-simple-wysiwyg";
 import { EventInfoModal } from "./EventInfoModel";
 import { EventFormModal } from "./EventModel";
+import { Link } from "react-router-dom";
 
 const { Text } = Typography;
 
@@ -380,6 +381,25 @@ const Event: React.FC = () => {
         dataIndex: "eventTime",
         render: (v: string) =>
           v ? formatTime12Hour(v) : "-",
+      },
+      {
+        title: "Registrations",
+        dataIndex: "_id",
+        render: (eventId: string, _: any) => (
+          <Link
+            to={`/event-registration?event=${eventId}`}
+          >
+            View
+          </Link>
+        ),
+      },
+      {
+        title: "Total Registrations",
+        dataIndex: "eventCount",
+        align: "center",
+        render: (count: number) => (
+          <span>{typeof count === "number" ? count : "-"}</span>
+        ),
       },
       {
         title: "Action",

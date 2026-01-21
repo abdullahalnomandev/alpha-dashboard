@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Table,
   Typography,
@@ -13,7 +13,7 @@ import {
 } from "antd";
 
 import type { TableColumnsType, TablePaginationConfig } from "antd";
-import { FiSearch } from "react-icons/fi";
+import { FiSearch, FiEye } from "react-icons/fi";
 import {
   DeleteOutlined,
 } from "@ant-design/icons";
@@ -26,12 +26,10 @@ import {
 } from "../../redux/apiSlices/event-registrationSlice";
 import { EditorProvider } from "react-simple-wysiwyg";
 import { EventRegistrationInfoModal } from "./EventRegistrationInfoModal";
+import { useGetEventsQuery } from "../../redux/apiSlices/eventSlice";
 
 const { Text } = Typography;
 
-/* =====================
-   Types
-===================== */
 export type EventRegistrationType = {
   _id: string;
   user: {
@@ -57,38 +55,83 @@ export type EventRegistrationType = {
 /* =====================
    Main Page
 ===================== */
-const statusOptions = [
-  { value: "pending", label: "Pending" },
-  { value: "confirmed", label: "Confirmed" },
-  { value: "cancelled", label: "Cancelled" },
-];
+const STATUS = {
+  PENDING: "pending",
+  CONFIRMED: "confirmed",
+  CANCELLED: "cancelled",
+};
+
+const statusLabels: Record<string, string> = {
+  pending: "Pending",
+  confirmed: "Confirmed",
+  cancelled: "Cancelled",
+};
+
+// Helper to get query param from URL
+function getEventIdFromLocation(): string | undefined {
+  if (typeof window === 'undefined') return undefined;
+  const params = new URLSearchParams(window.location.search);
+  const eId = params.get('event');
+  return eId ?? undefined;
+}
 
 const EventRegistrationPage: React.FC = () => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
 
-  // For modal data
-  const [viewId, setViewId] = useState<string | null>(null);
-  const [viewOpen, setViewOpen] = useState(false);
+  // EventId is dynamic based on ?event=event_id URL param by default
+  const [eventId, setEventId] = useState<string | undefined>(undefined);
 
-  // Query params for pagination and search
+  // On initial mount, if eventId exists in the URL, set it
+  useEffect(() => {
+    const initialEventId = getEventIdFromLocation();
+    if (initialEventId) setEventId(initialEventId);
+  }, []);
+
+  // Query params for pagination and search and event filter
   const query: Record<string, any> = { page, limit };
   if (search.trim()) query.searchTerm = search;
+  if (eventId) query.event = eventId;
+
+  // Get events for select options
+  const { data: eventsData, isLoading: isEventsLoading } = useGetEventsQuery({});
 
   // API hooks from event-registrationSlice
-  const { data, isLoading, refetch } = useGetEventRegistrationsQuery({ query });
+  const {
+    data,
+    isLoading,
+    refetch,
+  } = useGetEventRegistrationsQuery({ query });
   const [deleteEventRegistration, { isLoading: deleteLoading }] =
     useDeleteEventRegistrationMutation();
   const [updateEventRegistration, { isLoading: updateLoading }] =
     useUpdateEventRegistrationMutation();
 
-  // Get details for view modal
-  const { data: registrationDetails } = useGetEventRegistrationDetailsQuery(viewId!, {
-    skip: !viewOpen || !viewId,
-  });
+  // For modal data
+  const [viewItem, setViewItem] = useState<EventRegistrationType | null>(null);
+  const [viewOpen, setViewOpen] = useState(false);
 
-  const handleStatusUpdate = async (record: EventRegistrationType, newStatus: string) => {
+  // Get details for view modal
+  const { data: registrationDetails } = useGetEventRegistrationDetailsQuery(
+    viewItem?._id ?? "", 
+    {
+      skip: !viewOpen || !viewItem,
+    }
+  );
+
+  // Lookup for event name by ID
+  const eventIdToName: Record<string, string> = useMemo(() => {
+    if (!eventsData || !Array.isArray(eventsData.data)) return {};
+    const map: Record<string, string> = {};
+    for (const event of eventsData.data) {
+      map[event._id] = event.name || event.title || event._id;
+    }
+    return map;
+  }, [eventsData]);
+
+  const handleStatusUpdate = async (record: EventRegistrationType, decision: "confirm" | "cancel") => {
+    let newStatus: "confirmed" | "cancelled" = decision === "confirm" ? "confirmed" : "cancelled";
     try {
       await updateEventRegistration({
         id: record._id,
@@ -156,40 +199,67 @@ const EventRegistrationPage: React.FC = () => {
         title: "Event",
         dataIndex: "event",
         render: (event: string) => (
-          <span>{event}</span>
+          <span>
+            {eventIdToName[event] || event}
+          </span>
         ),
       },
       {
         title: "Status",
         dataIndex: "status",
+        key: "status",
+        align: "center",
         render: (status: string, record: EventRegistrationType) => {
-          return (
-            <span>
-              {record.status === "pending" ? (
-                <Select
-                  style={{ minWidth: 120 }}
-                  value={status}
-                  size="small"
-                  onChange={(value) => handleStatusUpdate(record, value)}
-                  disabled={updateLoading}
-                  options={statusOptions}
-                />
-              ) : (
-                <span
-                  style={{
-                    color:
-                      status === "confirmed"
-                        ? "#388e3c"
-                        : status === "cancelled"
-                        ? "#e53935"
-                        : "#a0830b",
-                  }}
-                >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </span>
-              )}
-            </span>
-          );
+          if (record.status === STATUS.PENDING) {
+            return (
+              <Space>
+                <Tooltip title="Confirm registration">
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => handleStatusUpdate(record, "confirm")}
+                    loading={updateLoading}
+                    style={{
+                      background: "#52c41a",
+                      borderColor: "#52c41a",
+                      boxShadow: "0 2px 10px rgba(82,196,26,0.10)",
+                    }}
+                  >
+                    Confirm
+                  </Button>
+                </Tooltip>
+                <Tooltip title="Cancel registration">
+                  <Button
+                    type="primary"
+                    size="small"
+                    danger
+                    onClick={() => handleStatusUpdate(record, "cancel")}
+                    loading={updateLoading}
+                    style={{ boxShadow: "0 2px 10px rgba(245,34,45,0.10)" }}
+                  >
+                    Cancel
+                  </Button>
+                </Tooltip>
+              </Space>
+            );
+          } else {
+            return (
+              <span
+                style={{
+                  color:
+                    status === STATUS.CONFIRMED
+                      ? "#388e3c"
+                      : status === STATUS.CANCELLED
+                      ? "#e53935"
+                      : "#a0830b",
+                  fontWeight: 500,
+                  fontSize: 14,
+                }}
+              >
+                {statusLabels[status] || status}
+              </span>
+            );
+          }
         },
       },
       {
@@ -215,18 +285,18 @@ const EventRegistrationPage: React.FC = () => {
         fixed: "right",
         render: (_: any, record: EventRegistrationType) => (
           <Space>
-            {/* <Tooltip title="View">
+            <Tooltip title="View">
               <Button
                 type="link"
                 style={{ color: "#2A62A6" }}
                 onClick={() => {
-                  setViewId(record._id);
+                  setViewItem(record);
                   setViewOpen(true);
                 }}
               >
-                <EyeOutlined />
+                <FiEye />
               </Button>
-            </Tooltip> */}
+            </Tooltip>
             <Tooltip title="Delete">
               <Popconfirm
                 title="Delete this registration?"
@@ -247,7 +317,7 @@ const EventRegistrationPage: React.FC = () => {
         ),
       },
     ],
-    [deleteLoading, page, limit, updateLoading]
+    [deleteLoading, page, limit, updateLoading, eventIdToName]
   );
 
   const pagination: TablePaginationConfig = {
@@ -273,22 +343,43 @@ const EventRegistrationPage: React.FC = () => {
     }));
   };
 
+  // Prepare event select options
+  const eventOptions =
+    eventsData && Array.isArray(eventsData.data)
+      ? eventsData.data.map((event: any) => ({
+          value: event._id,
+          label: event.name || event.title || event._id,
+        }))
+      : [];
+
+  // Prepare registration for info modal - ensure user is included
+  let infoModalRegistration = null;
+  if (
+    viewOpen &&
+    registrationDetails &&
+    registrationDetails.data
+  ) {
+    // If registrationDetails.data.user exists, use as is, else fallback to viewItem's user
+    const reg = registrationDetails.data;
+    infoModalRegistration = {
+      ...reg,
+      user: reg.user || viewItem?.user, // fallback just in case user missing from details
+    };
+  } else if (viewOpen && viewItem) {
+    // fallback: if we are open and no loaded details, pass in item from table
+    infoModalRegistration = viewItem;
+  }
+
   return (
     <EditorProvider>
       <div>
         {/* Modals */}
         <EventRegistrationInfoModal
           open={viewOpen}
-          registration={
-            viewOpen &&
-            registrationDetails &&
-            registrationDetails.data
-              ? registrationDetails.data
-              : null
-          }
+          registration={infoModalRegistration}
           onClose={() => {
             setViewOpen(false);
-            setViewId(null);
+            setViewItem(null);
           }}
         />
 
@@ -302,6 +393,7 @@ const EventRegistrationPage: React.FC = () => {
               justifyContent: "space-between",
             }}
           >
+            {/* Left side: Search */}
             <Input
               prefix={<FiSearch style={{ fontSize: 16, color: "#8c8c8c" }} />}
               type="text"
@@ -314,6 +406,21 @@ const EventRegistrationPage: React.FC = () => {
               allowClear
               style={{ width: 350 }}
               size="large"
+            />
+
+            {/* Right side: Select */}
+            <Select
+              placeholder="Filter by event"
+              loading={isEventsLoading}
+              size="large"
+              allowClear
+              style={{ minWidth: 200 }}
+              value={eventId}
+              options={eventOptions}
+              onChange={(val) => {
+                setEventId(val);
+                setPage(1);
+              }}
             />
           </div>
         </div>
@@ -329,7 +436,7 @@ const EventRegistrationPage: React.FC = () => {
             pagination={pagination}
             loading={isLoading}
             scroll={
-              window.innerWidth < 600 ? undefined : { y: `calc(100vh - 320px)` }
+              typeof window !== "undefined" && window.innerWidth < 600 ? undefined : { y: `calc(100vh - 320px)` }
             }
           />
         </Spin>
