@@ -1,144 +1,115 @@
-import { Button, DatePicker, Form, Input, Modal, TimePicker, Upload } from "antd";
+import { Button, Form, Input, Modal, Upload, InputNumber } from "antd";
 import { useEffect, useState } from "react";
-import type { EventType } from ".";
-import dayjs from "dayjs";
+import type { ClubType } from ".";
 import Editor from "react-simple-wysiwyg";
 
 import { UploadOutlined } from "@ant-design/icons";
 import { imageUrl } from "../../redux/api/baseApi";
 
 
-export const EventFormModal: React.FC<{
+export const ClubFormModal: React.FC<{
     open: boolean;
     loading: boolean;
-    editEvent: EventType | null;
+    editClub: ClubType | null;
     onClose: () => void;
     onAdd: (formData: FormData) => Promise<void>;
     onUpdate: (id: string, formData: FormData) => Promise<void>;
-  }> = ({ open, loading, editEvent, onClose, onAdd, onUpdate }) => {
+  }> = ({ open, loading, editClub, onClose, onAdd, onUpdate }) => {
     const [form] = Form.useForm();
     const [fileList, setFileList] = useState<any[]>([]);
-    // const [preview, setPreview] = useState<string | undefined>(undefined);
     const [html, setHtml] = useState<string>("");
   
     useEffect(() => {
-      if (editEvent) {
+      if (editClub) {
         form.setFieldsValue({
-          name: editEvent.name,
-          title: editEvent.title,
-          location: editEvent.location,
-          eventDate: editEvent.eventDate
-            ? dayjs(editEvent.eventDate)
-            : undefined,
-          eventTime: editEvent.eventTime
-            ? dayjs(editEvent.eventTime, "HH:mm")
-            : undefined,
+          name: editClub.name,
+          limitOfMember: editClub.limitOfMember,
+          numberOfMembers: editClub.numberOfMembers,
         });
-        setHtml(editEvent.description || "");
-        if (editEvent.image) {
-        //   setPreview(editEvent.image);
+        setHtml(editClub.description || "");
+        if (editClub.image) {
           setFileList([]);
         }
       } else {
         setFileList([]);
-        // setPreview(undefined);
         form.resetFields();
         setHtml("");
       }
       // eslint-disable-next-line
-    }, [editEvent, form]);
+    }, [editClub, form]);
   
     const handleSubmit = async () => {
       const values = await form.validateFields();
       const formData = new FormData();
   
       for (const k of Object.keys(values)) {
-        if (k === "eventDate" && values[k]) {
-          formData.append("eventDate", values[k].startOf("day").toISOString());
-        } else if (k === "eventTime" && values[k]) {
-          formData.append("eventTime", values[k].format("HH:mm"));
-        }
-        else if (values[k]) {
+        if (values[k] !== undefined && values[k] !== null) {
           formData.append(k, values[k]);
         }
       }
+      
       // Add description if present
       if (html && html.trim()) {
         formData.append("description", html);
       } else {
-        // You can make this field required by adding validation if needed
         formData.append("description", "");
       }
+      
       if (fileList.length > 0 && fileList[0].originFileObj) {
         formData.append("image", fileList[0].originFileObj);
       }
   
-      if (editEvent) {
-        await onUpdate(editEvent._id, formData);
+      if (editClub) {
+        await onUpdate(editClub._id, formData);
       } else {
         await onAdd(formData);
       }
       form.resetFields();
       setFileList([]);
-    //   setPreview(undefined);
       setHtml("");
     };
   
     return (
       <Modal
         open={open}
-        title={editEvent ? "Edit Event" : "Add Event"}
+        title={editClub ? "Edit Club" : "Add Club"}
         onCancel={onClose}
         onOk={handleSubmit}
         confirmLoading={loading}
-        okText={editEvent ? "Update" : "Create"}
+        okText={editClub ? "Update" : "Create"}
         width={600}
         destroyOnClose
       >
         <Form form={form} layout="vertical">
           <Form.Item
-            label="Name"
+            label="Club Name"
             name="name"
-            rules={[{ required: true, message: "Please enter event name" }]}
+            rules={[{ required: true, message: "Please enter club name" }]}
           >
-            <Input placeholder="Event name" />
+            <Input placeholder="Club name" />
           </Form.Item>
           <Form.Item
-            label="Title"
-            name="title"
-            rules={[{ required: true, message: "Please enter event title" }]}
+            label="Member Limit"
+            name="limitOfMember"
+            rules={[{ required: true, message: "Please enter member limit" }]}
           >
-            <Input placeholder="Event title" />
-          </Form.Item>
-          <Form.Item
-            label="Location"
-            name="location"
-            rules={[{ required: true, message: "Please enter event location" }]}
-          >
-            <Input placeholder="Event location" />
-          </Form.Item>
-          <Form.Item
-            label="Date"
-            name="eventDate"
-            rules={[{ required: true, message: "Please enter event date" }]}
-          >
-            <DatePicker
+            <InputNumber
+              placeholder="Maximum number of members"
+              min={1}
+              max={1000}
               style={{ width: "100%" }}
-              format="YYYY-MM-DD"
-              placeholder="Select date"
             />
           </Form.Item>
           <Form.Item
-            label="Time"
-            name="eventTime"
-            rules={[{ required: true, message: "Please enter event time" }]}
+            label="Current Members"
+            name="numberOfMembers"
+            rules={[{ required: true, message: "Please enter current number of members" }]}
           >
-            <TimePicker
-              use12Hours
-              format="hh:mm A"
-              minuteStep={1}
+            <InputNumber
+              placeholder="Current number of members"
+              min={0}
+              max={1000}
               style={{ width: "100%" }}
-              placeholder="Select time"
             />
           </Form.Item>
           <Form.Item
@@ -150,12 +121,11 @@ export const EventFormModal: React.FC<{
               value={html}
               onChange={e => setHtml(e.target.value)}
               aria-multiline
-              color="red"
               style={{minHeight: 150, height: 150 }}
-              placeholder="Write Description"
+              placeholder="Write description about the club"
             />
           </Form.Item>
-          <Form.Item label="Image">
+          <Form.Item label="Club Image">
             <Upload
               beforeUpload={(file) => {
                 const isJpgOrPng =
@@ -174,13 +144,13 @@ export const EventFormModal: React.FC<{
               fileList={
                 fileList.length
                   ? fileList
-                  : editEvent?.image
+                  : editClub?.image
                   ? [
                       {
                         uid: "-1",
-                        name: editEvent.image.split("/").pop() || "image.png",
+                        name: editClub.image.split("/").pop() || "image.png",
                         status: "done",
-                        url: imageUrl + "/" + editEvent.image,
+                        url: imageUrl + editClub.image,
                       },
                     ]
                   : []
@@ -198,4 +168,3 @@ export const EventFormModal: React.FC<{
       </Modal>
     );
   };
-  
