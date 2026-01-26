@@ -46,6 +46,7 @@ export const ExclusiveOfferInfoModal: React.FC<{
     >
       <div style={{
         borderRadius: 16,
+        marginTop:10,
         overflow: "hidden",
         background: "#fff",
         fontFamily: "inherit"

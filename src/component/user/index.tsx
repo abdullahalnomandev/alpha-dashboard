@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Table,
   Typography,
@@ -7,21 +7,20 @@ import {
   Space,
   Tooltip,
   Select,
-  message
+  message,
+  Spin
 } from "antd";
 import type { TableColumnsType, TablePaginationConfig } from "antd";
 import { FiSearch } from "react-icons/fi";
-import { EyeOutlined } from "@ant-design/icons";
+import { EyeOutlined, CheckSquareOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useGetUsersQuery, useUpdateSingleUserMutation } from "../../redux/apiSlices/userSlice";
 import { UserInfoModal } from "./UserInfoModel";
 import { imageUrl } from "../../redux/api/baseApi";
+import SendMessageModal from "./SendMessageModal";
 const { Text } = Typography;
 const { Option } = Select;
 
-/* =====================
-   Types
-===================== */
 export type UserType = {
   _id: string;
   name: string;
@@ -39,20 +38,18 @@ export type UserType = {
   updatedAt: string;
 };
 
-/* =====================
-   Main Page
-===================== */
 const User: React.FC = () => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(3);
 
   const [viewItem, setViewItem] = useState<UserType | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
-
-  // Don't use value prop in Select in render, use uncontrolled input
   const [localUserRole, setLocalUserRole] = useState<Record<string, UserType["role"]>>({});
   const [localUserStatus, setLocalUserStatus] = useState<Record<string, UserType["status"]>>({});
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [messageModalOpen, setMessageModalOpen] = useState(false);
+  const [messageText, setMessageText] = useState("");
 
   // Query params for pagination and search
   const query: Record<string, any> = { page, limit };
@@ -94,6 +91,7 @@ const User: React.FC = () => {
     }
   };
 
+  // Table columns
   const columns: TableColumnsType<UserType> = useMemo(
     () => [
       {
@@ -153,11 +151,9 @@ const User: React.FC = () => {
         title: "Role",
         dataIndex: "role",
         render: (_role: string, record: UserType) => {
-          // If localUserRole is not set, use record.role as default selected item
-          // Don't use value prop to avoid rerendering entire row on change
           return (
             <Select
-              defaultValue={localUserRole[record._id] ?? record.role}
+              value={localUserRole[record._id] ?? record.role}
               style={{ minWidth: 90 }}
               onChange={newRole => handleInstantRoleChange(record._id, newRole as "admin" | "user")}
               disabled={isUpdating}
@@ -173,11 +169,9 @@ const User: React.FC = () => {
         title: "Status",
         dataIndex: "status",
         render: (_status: string, record: UserType) => {
-          // If localUserStatus is not set, use record.status as default selected item
-          // Don't use value prop to avoid rerendering entire row on change
           return (
             <Select
-              defaultValue={localUserStatus[record._id] ?? record.status}
+              value={localUserStatus[record._id] ?? record.status}
               style={{ minWidth: 90 }}
               onChange={newStatus => handleInstantStatusChange(record._id, newStatus as "active" | "block")}
               disabled={isUpdating}
@@ -215,12 +209,12 @@ const User: React.FC = () => {
         ),
       },
     ],
-    // No need to depend on localUserRole/localUserStatus because we now only use defaultValue
-    [page, limit, isUpdating]
+    [page, limit, isUpdating, localUserRole, localUserStatus]
   );
 
+
   const pagination: TablePaginationConfig = {
-    total: data?.pagination?.total || 0,
+    total: data?.data?.pagination?.total || 0,
     current: page,
     pageSize: limit,
     showSizeChanger: true,
@@ -229,6 +223,45 @@ const User: React.FC = () => {
       setLimit(s);
     },
   };
+
+  // Table rowSelection with checkmarks (and Select All)
+  const rowSelection = {
+    selectedRowKeys,
+    columnPosition: 'left' as const,
+    selections: [
+      Table.SELECTION_ALL,
+      Table.SELECTION_INVERT,
+      Table.SELECTION_NONE,
+    ],
+    onChange: (selectedKeys: React.Key[]) => {
+      setSelectedRowKeys(selectedKeys);
+    },
+  };
+
+  // Whether to show action flex (right side for selected)
+  const showBulkActions = selectedRowKeys.length > 0;
+
+  // Modal handlers
+  const onMessageSend = () => {
+    console.log("Message to users", selectedRowKeys, messageText);
+    message.success("Message send logic will be implemented later!");
+    setMessageModalOpen(false);
+    setMessageText("");
+  };
+  const onMessageCancel = () => {
+    setMessageModalOpen(false);
+    setMessageText("");
+  };
+
+  // If our page is out of bounds
+  useEffect(() => {
+    const total = data?.data?.pagination?.total || data?.total || 0;
+    const maxPage = Math.max(1, Math.ceil(total / limit));
+    if (page > maxPage) {
+      setPage(maxPage);
+    }
+  }, [data, limit, page]);
+
 
   return (
     <div>
@@ -240,6 +273,7 @@ const User: React.FC = () => {
             gap: 20,
             alignItems: "center",
             justifyContent: "space-between",
+            marginBottom: showBulkActions ? 16 : 0,
           }}
         >
           <Input
@@ -255,10 +289,25 @@ const User: React.FC = () => {
             style={{ width: 350 }}
             size="large"
           />
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <Button
+              type="primary"
+              icon={<CheckSquareOutlined />}
+              onClick={() => setMessageModalOpen(true)}
+              size="large"
+              // disabled={!isMessageButtonEnabled}
+              style={{
+                // opacity: isMessageButtonEnabled ? 1 : 0.5,
+                // cursor: isMessageButtonEnabled ? 'pointer' : 'not-allowed',
+                transition: "opacity 0.2s"
+              }}
+            >
+             Send Notification
+            </Button>
+          </div>
         </div>
       </div>
-
-      {/* Table */}
+      <Spin spinning={isLoading}>
         <Table
           rowKey="_id"
           style={{ overflowX: "auto", marginTop: 20 }}
@@ -268,10 +317,23 @@ const User: React.FC = () => {
           pagination={pagination}
           loading={isLoading}
           scroll={
-            window.innerWidth < 600 ? undefined : { y: `calc(100vh - 320px)` }
+            typeof window !== "undefined" && window.innerWidth < 600
+              ? undefined
+              : { y: `calc(100vh - 320px)` }
           }
+          rowSelection={rowSelection}
         />
+      </Spin>
       <UserInfoModal user={viewItem} open={viewOpen} onClose={() => setViewOpen(false)} />
+      <SendMessageModal
+        open={messageModalOpen}
+        loading={isUpdating}
+        messageText={messageText}
+        setMessageText={setMessageText}
+        selectedUsers={userList.filter(u => selectedRowKeys.includes(u._id))}
+        onOk={onMessageSend}
+        onCancel={onMessageCancel}
+      />
     </div>
   );
 };

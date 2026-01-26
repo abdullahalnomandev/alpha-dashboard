@@ -28,6 +28,8 @@ import FaqPage from "../pages/settings/FaqPage";
 import ContactFormPage from "../pages/ContactFormPage";
 import { RiFileList3Line, RiMailSendLine } from "react-icons/ri";
 import EventRegistrationPage from "../component/event-registration";
+import ContactUsPage from "../pages/settings/ContactUsPage";
+import { IoCallOutline } from "react-icons/io5";
 
 
 export const MENU_CONFIG = [
@@ -136,6 +138,13 @@ export const MENU_CONFIG = [
     icon: <CiSettings />,
     children: [
 
+      {
+        key: 'contact-us',     // make the key unique among all menu items
+        label: 'Contact Us',
+        icon: <IoCallOutline />,
+        element: <ContactUsPage />,
+        path: '/settings/contact-us',
+      },
       {
         key: 'settings-faq',     // make the key unique among all menu items
         label: 'Faq',

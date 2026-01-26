@@ -44,6 +44,7 @@ export type MembershipApplicationType = {
   email: string;
   phone: string;
   address: string;
+  image:string;
   familyMembers: FamilyMember[];
   membershipStatus: string;
   expireId: string;
@@ -368,6 +369,8 @@ const MembershipApplication: React.FC = () => {
     },
   };
 
+  // Find proper familyMembershipOptions to pass to the info model
+  // We'll use the currently viewed application (viewItem), falling back to undefined
   return (
     <div>
       {/* Modals */}
