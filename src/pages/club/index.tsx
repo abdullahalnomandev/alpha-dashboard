@@ -1,6 +1,6 @@
-import Event from "../../component/club";
+import Club from "../../component/club";
 
-const EventPage: React.FC = () => {
+const ClubPage: React.FC = () => {
   return (
     <div>
        <Club />
@@ -8,4 +8,4 @@ const EventPage: React.FC = () => {
   );
 };
 
-export default EventPage;
+export default ClubPage;
