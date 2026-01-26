@@ -89,6 +89,17 @@ const userSlice = api.injectEndpoints({
                 };
             },
         }),
+
+        sendPushNotification: builder.mutation({
+            query: ({usersId = [], message}: {
+                usersId?: string[],
+                message: string
+            }) => ({
+                url: '/user/push-notification',
+                method: 'POST',
+                body: {usersId, message}
+            })
+        }),
     }),
 });
-export const {useGetUsersQuery, useChangeStatusUserMutation,useGetHostsQuery, useGetStatisticsQuery, useGetUserStatisticsQuery, useUpdateUserMutation,useChangePasswordMutation, useUpdateSingleUserMutation } = userSlice;
+export const {useGetUsersQuery, useChangeStatusUserMutation,useGetHostsQuery, useGetStatisticsQuery, useGetUserStatisticsQuery, useUpdateUserMutation,useChangePasswordMutation, useUpdateSingleUserMutation , useSendPushNotificationMutation } = userSlice;

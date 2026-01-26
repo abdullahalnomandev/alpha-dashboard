@@ -7,14 +7,17 @@ import {
   Space,
   Tooltip,
   Select,
-  message,
-  Spin
+  message
 } from "antd";
 import type { TableColumnsType, TablePaginationConfig } from "antd";
 import { FiSearch } from "react-icons/fi";
 import { EyeOutlined, CheckSquareOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
-import { useGetUsersQuery, useUpdateSingleUserMutation } from "../../redux/apiSlices/userSlice";
+import {
+  useGetUsersQuery,
+  useSendPushNotificationMutation,
+  useUpdateSingleUserMutation
+} from "../../redux/apiSlices/userSlice";
 import { UserInfoModal } from "./UserInfoModel";
 import { imageUrl } from "../../redux/api/baseApi";
 import SendMessageModal from "./SendMessageModal";
@@ -41,7 +44,7 @@ export type UserType = {
 const User: React.FC = () => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(3);
+  const [limit, setLimit] = useState(10);
 
   const [viewItem, setViewItem] = useState<UserType | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
@@ -57,6 +60,7 @@ const User: React.FC = () => {
 
   const { data, isLoading } = useGetUsersQuery({ query });
   const [updateSingleUser, { isLoading: isUpdating }] = useUpdateSingleUserMutation();
+  const [sendPushNotification, { isLoading: isNotificationSending }] = useSendPushNotificationMutation();
 
   const getUserArray = (rawData: any): UserType[] => {
     if (Array.isArray(rawData)) return rawData;
@@ -212,7 +216,6 @@ const User: React.FC = () => {
     [page, limit, isUpdating, localUserRole, localUserStatus]
   );
 
-
   const pagination: TablePaginationConfig = {
     total: data?.data?.pagination?.total || 0,
     current: page,
@@ -242,12 +245,25 @@ const User: React.FC = () => {
   const showBulkActions = selectedRowKeys.length > 0;
 
   // Modal handlers
-  const onMessageSend = () => {
-    console.log("Message to users", selectedRowKeys, messageText);
-    message.success("Message send logic will be implemented later!");
-    setMessageModalOpen(false);
-    setMessageText("");
+  const onMessageSend = async () => {
+    if (!messageText.trim()) {
+      message.warning("Please enter a message to send.");
+      return;
+    }
+    try {
+      await sendPushNotification({
+        usersId: selectedRowKeys.map(String),
+        message: messageText
+      }).unwrap();
+      message.success("Notification sent successfully!");
+      setMessageModalOpen(false);
+      setMessageText("");
+      setSelectedRowKeys([]); // Uncheck all selected after send (per instruction)
+    } catch (e: any) {
+      message.error(e?.data?.message || e?.message || "Failed to send notification");
+    }
   };
+
   const onMessageCancel = () => {
     setMessageModalOpen(false);
     setMessageText("");
@@ -295,10 +311,7 @@ const User: React.FC = () => {
               icon={<CheckSquareOutlined />}
               onClick={() => setMessageModalOpen(true)}
               size="large"
-              // disabled={!isMessageButtonEnabled}
               style={{
-                // opacity: isMessageButtonEnabled ? 1 : 0.5,
-                // cursor: isMessageButtonEnabled ? 'pointer' : 'not-allowed',
                 transition: "opacity 0.2s"
               }}
             >
@@ -307,7 +320,6 @@ const User: React.FC = () => {
           </div>
         </div>
       </div>
-      <Spin spinning={isLoading}>
         <Table
           rowKey="_id"
           style={{ overflowX: "auto", marginTop: 20 }}
@@ -323,11 +335,10 @@ const User: React.FC = () => {
           }
           rowSelection={rowSelection}
         />
-      </Spin>
       <UserInfoModal user={viewItem} open={viewOpen} onClose={() => setViewOpen(false)} />
       <SendMessageModal
         open={messageModalOpen}
-        loading={isUpdating}
+        loading={isNotificationSending}
         messageText={messageText}
         setMessageText={setMessageText}
         selectedUsers={userList.filter(u => selectedRowKeys.includes(u._id))}

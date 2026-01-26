@@ -89,13 +89,23 @@ const Stories: React.FC = () => {
       {
         title: "Image",
         dataIndex: "image",
-        width: 150,
-        render: (_: any, record: StoryType) => {
-          const src = record.image;
-          return src ? (
+        render: (src: string | string[] | undefined, _) => {
+          let imagePath: string | undefined;
+          if (Array.isArray(src) && src.length > 0) {
+            imagePath = src[0];
+          } else if (typeof src === "string") {
+            imagePath = src;
+          } else {
+            imagePath = undefined;
+          }
+          return imagePath ? (
             <img
-              src={`${imageUrl}${src}`}
-              alt="story"
+              src={
+                imagePath.startsWith("http")
+                  ? imagePath
+                  : `${imageUrl}/${imagePath.replace(/^\/+/, "")}`
+              }
+              alt="image"
               style={{
                 height: 48,
                 width: 48,
@@ -104,7 +114,7 @@ const Stories: React.FC = () => {
               }}
             />
           ) : (
-            <span style={{ color: "#ccc" }}>No image</span>
+            <span style={{ color: "#ccc" }}>No logo</span>
           );
         },
       },
@@ -116,12 +126,6 @@ const Stories: React.FC = () => {
             {v}
           </Text>
         ),
-      },
-      {
-        title: "Club Name",
-        dataIndex: ["club", "name"],
-        render: (_: any, record: StoryType) =>
-          record.club?.name || <span style={{ color: "#aaa" }}>-</span>,
       },
       {
         title: "Likes",

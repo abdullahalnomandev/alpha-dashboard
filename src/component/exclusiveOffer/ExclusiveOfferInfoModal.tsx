@@ -35,18 +35,20 @@ export const ExclusiveOfferInfoModal: React.FC<{
       footer={null}
       centered
       width={800}
-      destroyOnClose
+      destroyOnHidden
       title={null}
-      bodyStyle={{
-        padding: 0,
-        borderRadius: 16,
-        overflow: "hidden"
+      styles={{
+        body: {
+          padding: 0,
+          borderRadius: 16,
+          overflow: "hidden"
+        }
       }}
       style={{ borderRadius: 16, padding: 0 }}
     >
       <div style={{
         borderRadius: 16,
-        marginTop:10,
+        marginTop:8,
         overflow: "hidden",
         background: "#fff",
         fontFamily: "inherit"
@@ -67,7 +69,7 @@ export const ExclusiveOfferInfoModal: React.FC<{
               <Carousel
                 dots
                 autoplay={imageUrls.length > 1}
-                autoplaySpeed={3000}
+                autoplaySpeed={1500}
                 draggable
                 adaptiveHeight
               >

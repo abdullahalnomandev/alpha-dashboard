@@ -6,10 +6,6 @@ export type StoryInfoType = {
   title: string;
   description?: string;
   image?: string | string[];
-  club?: {
-    _id: string;
-    name: string;
-  };
   createdAt?: string;
   updatedAt?: string;
   likeCount?: number;
@@ -55,7 +51,7 @@ export const StoryInfoModal: React.FC<{
       <div
         style={{
           borderRadius: 16,
-          marginTop: 10,
+          marginTop: 8,
           overflow: "hidden",
           background: "#fff",
           fontFamily: "inherit",
@@ -77,11 +73,9 @@ export const StoryInfoModal: React.FC<{
               <Carousel
                 dots
                 autoplay={imageUrls.length > 1}
-                autoplaySpeed={3000}
+                autoplaySpeed={1500}
                 draggable
-                adaptiveHeight={false}
-                waitForAnimate
-                speed={1500}
+                adaptiveHeight
               >
                 {imageUrls.map((src, idx) => (
                   <div key={`${src}-${idx}`}>
@@ -131,28 +125,13 @@ export const StoryInfoModal: React.FC<{
         </div>
         {/* Main info card */}
         <div style={{ padding: "22px 24px 0 24px", background: "#fff" }}>
-          {/* Title & club */}
+          {/* Title */}
           <Typography.Title
             level={4}
             style={{ margin: 0, color: "#242649", fontWeight: 600 }}
           >
             {story.title}
           </Typography.Title>
-          <div
-            style={{
-              color: "#7d8597",
-              marginTop: 3,
-              marginBottom: 4,
-              fontWeight: 500,
-              fontSize: 16,
-            }}
-          >
-            {story.club && story.club.name ? (
-              story.club.name
-            ) : (
-              <span style={{ color: "#888" }}>No club information</span>
-            )}
-          </div>
           <div
             style={{
               color: "#adadad",

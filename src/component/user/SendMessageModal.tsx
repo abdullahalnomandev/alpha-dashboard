@@ -47,7 +47,7 @@ export default function SendMessageModal({
             ? selectedUsers.length <= 5
               ? selectedUsers.map(u => u.name || u.email).join(", ")
               : `${selectedUsers.length === 0 ? "All" : selectedUsers?.length} users selected`
-            : "No user selected"
+            : "All user will get notification"
           }
         </Typography.Text>
       </div>
