@@ -45,21 +45,28 @@ const NotificationPage: React.FC = () => {
 
   // Handle notification click: mark as seen if not yet, then redirect
   const handleNotificationClick = async (item: any) => {
-    refetch();
-    if (!item.seen) {
-      try {
+    try {
+      // 1️⃣ Mark as seen if not already
+      if (!item.seen) {
         await updateNotification({
           id: item._id,
           data: { seen: true },
         }).unwrap();
-      } catch (err) {
-        // error is silent, still navigate
+  
+        item.seen = true;
       }
+    } catch (err) {
+      // silently ignore
     }
+  
+    refetch();
+  
+    // 3️⃣ Navigate to the path
     if (item.path) {
       navigate(item.path);
     }
   };
+  
 
   return (
     <div

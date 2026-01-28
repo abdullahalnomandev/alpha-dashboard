@@ -8,7 +8,12 @@ import {
   Button,
   Dropdown,
 } from "antd";
-import { BellOutlined, LogoutOutlined, MenuOutlined, UserOutlined } from "@ant-design/icons";
+import {
+  BellOutlined,
+  LogoutOutlined,
+  MenuOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
 import { Outlet, useNavigate, useLocation, Link } from "react-router-dom";
 import type { MenuProps } from "antd";
 import React from "react";
@@ -16,8 +21,11 @@ import { MENU_CONFIG } from "../constant/sidebarMenue";
 import { handleLogout } from "../services/auth.service";
 import { useProfileQuery } from "../redux/apiSlices/authSlice";
 import { imageUrl } from "../redux/api/baseApi";
-import logo from '../assets/alpha_logo.svg'
-import { useClearNotificationsMutation, useGetNotificationCountQuery } from "../redux/apiSlices/notificationSlice";
+import logo from "../assets/alpha_logo.svg";
+import {
+  useClearNotificationsMutation,
+  useGetNotificationCountQuery,
+} from "../redux/apiSlices/notificationSlice";
 
 const { Sider, Header, Content } = Layout;
 const { Text } = Typography;
@@ -82,7 +90,6 @@ for (const item of allMenuItemsFlat) {
 const logoutKey = LOGOUT_ITEM.key;
 
 const siderWidth = 240;
-
 
 // Returns array of selected keys by finding the deepest match for current path
 function findSelectedMenuKeys(menuConfig: any[], pathname: string): string[] {
@@ -193,7 +200,9 @@ const DashboardLayout: React.FC = () => {
 
   React.useEffect(() => {
     if (!isMobile) {
-      setOpenKeys(selectedMenuKeys.length > 1 ? selectedMenuKeys.slice(0, -1) : []);
+      setOpenKeys(
+        selectedMenuKeys.length > 1 ? selectedMenuKeys.slice(0, -1) : []
+      );
     }
   }, [selectedMenuKeys, isMobile]);
 
@@ -211,12 +220,12 @@ const DashboardLayout: React.FC = () => {
     handleLogout();
   };
 
-  const handleProfileMenuClick: MenuProps['onClick'] = (info) => {
+  const handleProfileMenuClick: MenuProps["onClick"] = (info) => {
     switch (info.key) {
-      case 'profile':
-        navigate('/profile');
+      case "profile":
+        navigate("/profile");
         break;
-      case 'logout':
+      case "logout":
         handleLogout();
         break;
       default:
@@ -270,7 +279,10 @@ const DashboardLayout: React.FC = () => {
   );
 
   // Find the label for the header (by selected key, recursively)
-  function getHeaderLabelByKey(menuConfig: any[], key: string): React.ReactNode {
+  function getHeaderLabelByKey(
+    menuConfig: any[],
+    key: string
+  ): React.ReactNode {
     let result: React.ReactNode = "";
     function dfs(items: any[]) {
       for (let item of items) {
@@ -291,16 +303,18 @@ const DashboardLayout: React.FC = () => {
   // Call clearNotifications mutation (from notificationSlice) and await for completion
   const handleClearNotification = async () => {
     await clearNotifications(null);
-    navigate('/notifications');
-  }
+    navigate("/notifications");
+  };
 
   // Dropdown menu for the profile avatar+name
   // Reformatted for Antd 5.x Dropdown
-  const profileMenuItems: MenuProps['items'] = [
+  const profileMenuItems: MenuProps["items"] = [
     {
       key: "name",
       label: (
-        <span style={{ fontWeight: 600, display: "flex", alignItems: "center" }}>
+        <span
+          style={{ fontWeight: 600, display: "flex", alignItems: "center" }}
+        >
           <UserOutlined style={{ marginRight: 8 }} />
           {profile?.data?.name}
         </span>
@@ -313,7 +327,7 @@ const DashboardLayout: React.FC = () => {
       label: "Profile",
     },
     {
-      type: 'divider',
+      type: "divider",
     },
     {
       key: "logout",
@@ -326,7 +340,7 @@ const DashboardLayout: React.FC = () => {
   const renderProfileDropdown = () => (
     <Dropdown
       menu={{ items: profileMenuItems, onClick: handleProfileMenuClick }}
-      trigger={['click']}
+      trigger={["click"]}
       placement="bottomRight"
       arrow
     >
@@ -564,8 +578,10 @@ const DashboardLayout: React.FC = () => {
             >
               <Badge
                 count={
-                  typeof notificationCount === "number" && notificationCount !== 0
-                    ? notificationCount
+                  typeof notificationCount === "number" && notificationCount > 0
+                    ? notificationCount > 9
+                      ? "9+"
+                      : notificationCount
                     : undefined
                 }
                 size="small"

@@ -16,6 +16,7 @@ import {
   CheckCircleTwoTone,
   CloseCircleTwoTone,
 } from "@ant-design/icons";
+import { imageUrl } from "../../redux/api/baseApi";
 
 const { Title, Text } = Typography;
 
@@ -179,7 +180,14 @@ export const EventRegistrationInfoModal: React.FC<{
             <div style={{ flexShrink: 0, display: "flex", alignItems: "center", height: 64 }}>
               {registration.user.profileImage ? (
                 <Avatar
-                  src={registration.user.profileImage}
+                  src={
+                    registration.user?.profileImage
+                      ? registration.user.profileImage.startsWith("http") ||
+                      registration.user.profileImage.startsWith("https")
+                        ? registration.user.profileImage
+                        : imageUrl + registration.user.profileImage
+                      : undefined
+                  }
                   size={64}
                   style={{
                     border: `3px solid ${accentColor}`,

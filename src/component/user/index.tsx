@@ -12,7 +12,6 @@ import {
 import type { TableColumnsType, TablePaginationConfig } from "antd";
 import { FiSearch } from "react-icons/fi";
 import { EyeOutlined, CheckSquareOutlined } from "@ant-design/icons";
-import dayjs from "dayjs";
 import {
   useGetUsersQuery,
   useSendPushNotificationMutation,
@@ -146,7 +145,7 @@ const User: React.FC = () => {
           ) : (
             <span style={{ color: "#ccc" }}>No image</span>
           );
-        },
+        }
       },
       {
         title: "Name",
@@ -197,11 +196,11 @@ const User: React.FC = () => {
           );
         },
       },
-      {
-        title: "Created Date",
-        dataIndex: "createdAt",
-        render: (v: string) => (v ? dayjs(v).format("DD MMM YYYY") : "-"),
-      },
+      // {
+      //   title: "Created Date",
+      //   dataIndex: "createdAt",
+      //   render: (v: string) => (v ? dayjs(v).format("DD MMM YYYY") : "-"),
+      // },
       {
         title: "Role",
         dataIndex: "role",
@@ -411,7 +410,7 @@ const User: React.FC = () => {
           </div>
         </div>
       </div>
-      {/* <Table
+      <Table
         rowKey="_id"
         style={{ overflowX: "auto", marginTop: 20 }}
         dataSource={userList}
@@ -425,30 +424,7 @@ const User: React.FC = () => {
             : { y: `calc(100vh - 320px)` }
         }
         rowSelection={rowSelection}
-      /> */}
-      <Table
-        rowKey="_id"
-        dataSource={userList}
-        columns={columns.map((col) => ({
-          ...col,
-          // Optional: hide certain columns on small screens
-          responsive: col.responsive || ["xs", "sm", "md", "lg", "xl"],
-        }))}
-        className="event-table-custom-gray event-table-gray-row-border"
-        pagination={pagination}
-        loading={isLoading}
-        rowSelection={rowSelection}
-        style={{ width: "100%", overflowX: "auto", marginTop: 20 }}
-        scroll={
-          typeof window !== "undefined"
-            ? {
-                x: 800, // horizontal scroll if content exceeds 800px
-                y: window.innerWidth < 600 ? undefined : `calc(100vh - 320px)`, // vertical scroll only on desktop
-              }
-            : undefined
-        }
       />
-
       <UserInfoModal
         user={viewItem}
         open={viewOpen}

@@ -14,9 +14,7 @@ import {
 
 import type { TableColumnsType, TablePaginationConfig } from "antd";
 import { FiSearch, FiEye } from "react-icons/fi";
-import {
-  DeleteOutlined,
-} from "@ant-design/icons";
+import { DeleteOutlined } from "@ant-design/icons";
 
 import {
   useGetEventRegistrationsQuery,
@@ -27,6 +25,7 @@ import {
 import { EditorProvider } from "react-simple-wysiwyg";
 import { EventRegistrationInfoModal } from "./EventRegistrationInfoModal";
 import { useGetEventsQuery } from "../../redux/apiSlices/eventSlice";
+import { imageUrl } from "../../redux/api/baseApi";
 
 const { Text } = Typography;
 
@@ -69,9 +68,9 @@ const statusLabels: Record<string, string> = {
 
 // Helper to get query param from URL
 function getEventIdFromLocation(): string | undefined {
-  if (typeof window === 'undefined') return undefined;
+  if (typeof window === "undefined") return undefined;
   const params = new URLSearchParams(window.location.search);
-  const eId = params.get('event');
+  const eId = params.get("event");
   return eId ?? undefined;
 }
 
@@ -95,14 +94,12 @@ const EventRegistrationPage: React.FC = () => {
   if (eventId) query.event = eventId;
 
   // Get events for select options
-  const { data: eventsData, isLoading: isEventsLoading } = useGetEventsQuery({});
+  const { data: eventsData, isLoading: isEventsLoading } = useGetEventsQuery(
+    {}
+  );
 
   // API hooks from event-registrationSlice
-  const {
-    data,
-    isLoading,
-    refetch,
-  } = useGetEventRegistrationsQuery({ query });
+  const { data, isLoading, refetch } = useGetEventRegistrationsQuery({ query });
   const [deleteEventRegistration, { isLoading: deleteLoading }] =
     useDeleteEventRegistrationMutation();
   const [updateEventRegistration, { isLoading: updateLoading }] =
@@ -114,7 +111,7 @@ const EventRegistrationPage: React.FC = () => {
 
   // Get details for view modal
   const { data: registrationDetails } = useGetEventRegistrationDetailsQuery(
-    viewItem?._id ?? "", 
+    viewItem?._id ?? "",
     {
       skip: !viewOpen || !viewItem,
     }
@@ -130,8 +127,12 @@ const EventRegistrationPage: React.FC = () => {
     return map;
   }, [eventsData]);
 
-  const handleStatusUpdate = async (record: EventRegistrationType, decision: "confirm" | "cancel") => {
-    let newStatus: "confirmed" | "cancelled" = decision === "confirm" ? "confirmed" : "cancelled";
+  const handleStatusUpdate = async (
+    record: EventRegistrationType,
+    decision: "confirm" | "cancel"
+  ) => {
+    let newStatus: "confirmed" | "cancelled" =
+      decision === "confirm" ? "confirmed" : "cancelled";
     try {
       await updateEventRegistration({
         id: record._id,
@@ -163,8 +164,15 @@ const EventRegistrationPage: React.FC = () => {
         render: (_: any, record: EventRegistrationType) => (
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <img
-              src={record.user?.profileImage}
-              alt={record.user?.name}
+              src={
+                record.user?.profileImage
+                  ? record.user.profileImage.startsWith("http") ||
+                    record.user.profileImage.startsWith("https")
+                    ? record.user.profileImage
+                    : imageUrl + record.user.profileImage
+                  : undefined
+              }
+              alt={record.user?.name || "profile"}
               style={{
                 width: 28,
                 height: 28,
@@ -173,6 +181,7 @@ const EventRegistrationPage: React.FC = () => {
                 marginRight: 6,
               }}
             />
+
             <span>
               <Text strong style={{ fontSize: 16 }}>
                 {record.user?.name}
@@ -198,11 +207,7 @@ const EventRegistrationPage: React.FC = () => {
       {
         title: "Event",
         dataIndex: "event",
-        render: (event: string) => (
-          <span>
-            {eventIdToName[event] || event}
-          </span>
-        ),
+        render: (event: string) => <span>{eventIdToName[event] || event}</span>,
       },
       {
         title: "Status",
@@ -272,11 +277,7 @@ const EventRegistrationPage: React.FC = () => {
           const year = d.getFullYear();
           const hours = d.getHours().toString().padStart(2, "0");
           const minutes = d.getMinutes().toString().padStart(2, "0");
-          return (
-            <span>
-              {`${day} ${month} ${year}, ${hours}:${minutes}`}
-            </span>
-          );
+          return <span>{`${day} ${month} ${year}, ${hours}:${minutes}`}</span>;
         },
       },
       {
@@ -354,11 +355,7 @@ const EventRegistrationPage: React.FC = () => {
 
   // Prepare registration for info modal - ensure user is included
   let infoModalRegistration = null;
-  if (
-    viewOpen &&
-    registrationDetails &&
-    registrationDetails.data
-  ) {
+  if (viewOpen && registrationDetails && registrationDetails.data) {
     // If registrationDetails.data.user exists, use as is, else fallback to viewItem's user
     const reg = registrationDetails.data;
     infoModalRegistration = {
@@ -436,7 +433,9 @@ const EventRegistrationPage: React.FC = () => {
             pagination={pagination}
             loading={isLoading}
             scroll={
-              typeof window !== "undefined" && window.innerWidth < 600 ? undefined : { y: `calc(100vh - 320px)` }
+              typeof window !== "undefined" && window.innerWidth < 600
+                ? undefined
+                : { y: `calc(100vh - 320px)` }
             }
           />
         </Spin>
