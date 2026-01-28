@@ -42,6 +42,16 @@ const userSlice = api.injectEndpoints({
                 };
             },
         }),
+        updatePendingUserProfile: builder.mutation({
+            query: ({ id, status }: { id: string; status: string }) => {
+                return {
+                    method: "PATCH",
+                    url: `/user/approve-pending-users/${id}`,
+                    body: status,
+                    formData: true,
+                };
+            },
+        }),
         changePassword: builder.mutation({
             query: ({
                 currentPassword,
@@ -102,4 +112,4 @@ const userSlice = api.injectEndpoints({
         }),
     }),
 });
-export const {useGetUsersQuery, useChangeStatusUserMutation,useGetHostsQuery, useGetStatisticsQuery, useGetUserStatisticsQuery, useUpdateUserMutation,useChangePasswordMutation, useUpdateSingleUserMutation , useSendPushNotificationMutation } = userSlice;
+export const {useGetUsersQuery, useChangeStatusUserMutation,useGetHostsQuery, useGetStatisticsQuery, useGetUserStatisticsQuery, useUpdateUserMutation,useChangePasswordMutation, useUpdateSingleUserMutation , useSendPushNotificationMutation, useUpdatePendingUserProfileMutation } = userSlice;

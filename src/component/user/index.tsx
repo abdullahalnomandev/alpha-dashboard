@@ -7,7 +7,7 @@ import {
   Space,
   Tooltip,
   Select,
-  message
+  message,
 } from "antd";
 import type { TableColumnsType, TablePaginationConfig } from "antd";
 import { FiSearch } from "react-icons/fi";
@@ -16,11 +16,13 @@ import dayjs from "dayjs";
 import {
   useGetUsersQuery,
   useSendPushNotificationMutation,
-  useUpdateSingleUserMutation
+  useUpdatePendingUserProfileMutation,
+  useUpdateSingleUserMutation,
 } from "../../redux/apiSlices/userSlice";
 import { UserInfoModal } from "./UserInfoModel";
 import { imageUrl } from "../../redux/api/baseApi";
 import SendMessageModal from "./SendMessageModal";
+import UpdateRequestModal from "./UpdateRequestModal";
 const { Text } = Typography;
 const { Option } = Select;
 
@@ -37,6 +39,12 @@ export type UserType = {
     _id: string;
     membershipType: string;
   };
+  profileUpdateRequest?: {
+    _id: string;
+    name?: string;
+    profileImage?: string;
+    status: "pending" | "approved" | "rejected";
+  };
   createdAt: string;
   updatedAt: string;
 };
@@ -45,34 +53,49 @@ const User: React.FC = () => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-
+  const [updateRequestUser, setUpdateRequestUser] = useState<UserType | null>(
+    null
+  );
+  const [updateRequestOpen, setUpdateRequestOpen] = useState(false);
   const [viewItem, setViewItem] = useState<UserType | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
-  const [localUserRole, setLocalUserRole] = useState<Record<string, UserType["role"]>>({});
-  const [localUserStatus, setLocalUserStatus] = useState<Record<string, UserType["status"]>>({});
+  const [localUserRole, setLocalUserRole] = useState<
+    Record<string, UserType["role"]>
+  >({});
+  const [localUserStatus, setLocalUserStatus] = useState<
+    Record<string, UserType["status"]>
+  >({});
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [messageModalOpen, setMessageModalOpen] = useState(false);
   const [messageText, setMessageText] = useState("");
+  const [updatePendingUserProfile, { isLoading: isUpdatingProfile }] =
+    useUpdatePendingUserProfileMutation();
 
   // Query params for pagination and search
   const query: Record<string, any> = { page, limit };
   if (search.trim()) query.searchTerm = search;
 
-  const { data, isLoading } = useGetUsersQuery({ query });
-  const [updateSingleUser, { isLoading: isUpdating }] = useUpdateSingleUserMutation();
-  const [sendPushNotification, { isLoading: isNotificationSending }] = useSendPushNotificationMutation();
+  const { data, isLoading, refetch } = useGetUsersQuery({ query });
+  const [updateSingleUser, { isLoading: isUpdating }] =
+    useUpdateSingleUserMutation();
+  const [sendPushNotification, { isLoading: isNotificationSending }] =
+    useSendPushNotificationMutation();
 
   const getUserArray = (rawData: any): UserType[] => {
     if (Array.isArray(rawData)) return rawData;
-    if (rawData && typeof rawData === "object" && Array.isArray(rawData.data)) return rawData.data;
+    if (rawData && typeof rawData === "object" && Array.isArray(rawData.data))
+      return rawData.data;
     return [];
   };
 
   const userList: UserType[] = useMemo(() => getUserArray(data?.data), [data]);
 
   // Save local role/status instantly and update backend
-  const handleInstantRoleChange = async (id: string, newRole: UserType["role"]) => {
-    setLocalUserRole(prev => ({ ...prev, [id]: newRole }));
+  const handleInstantRoleChange = async (
+    id: string,
+    newRole: UserType["role"]
+  ) => {
+    setLocalUserRole((prev) => ({ ...prev, [id]: newRole }));
     try {
       const formData = new FormData();
       formData.append("role", newRole);
@@ -83,8 +106,11 @@ const User: React.FC = () => {
     }
   };
 
-  const handleInstantStatusChange = async (id: string, newStatus: UserType["status"]) => {
-    setLocalUserStatus(prev => ({ ...prev, [id]: newStatus }));
+  const handleInstantStatusChange = async (
+    id: string,
+    newStatus: UserType["status"]
+  ) => {
+    setLocalUserStatus((prev) => ({ ...prev, [id]: newStatus }));
     try {
       const formData = new FormData();
       formData.append("status", newStatus);
@@ -126,7 +152,9 @@ const User: React.FC = () => {
         title: "Name",
         dataIndex: "name",
         render: (v: string) => (
-          <Text strong style={{ fontSize: 16 }}>{v}</Text>
+          <Text strong style={{ fontSize: 16 }}>
+            {v}
+          </Text>
         ),
       },
       {
@@ -147,6 +175,29 @@ const User: React.FC = () => {
             : "-",
       },
       {
+        title: "Update Request",
+        align: "center",
+        render: (_: any, record: UserType) => {
+          const req = record.profileUpdateRequest;
+
+          if (!req || req.status !== "pending") {
+            return <Text type="secondary">-</Text>;
+          }
+
+          return (
+            <Button
+              type="link"
+              onClick={() => {
+                setUpdateRequestUser(record);
+                setUpdateRequestOpen(true);
+              }}
+            >
+              View
+            </Button>
+          );
+        },
+      },
+      {
         title: "Created Date",
         dataIndex: "createdAt",
         render: (v: string) => (v ? dayjs(v).format("DD MMM YYYY") : "-"),
@@ -159,7 +210,9 @@ const User: React.FC = () => {
             <Select
               value={localUserRole[record._id] ?? record.role}
               style={{ minWidth: 90 }}
-              onChange={newRole => handleInstantRoleChange(record._id, newRole as "admin" | "user")}
+              onChange={(newRole) =>
+                handleInstantRoleChange(record._id, newRole as "admin" | "user")
+              }
               disabled={isUpdating}
               size="small"
             >
@@ -177,7 +230,12 @@ const User: React.FC = () => {
             <Select
               value={localUserStatus[record._id] ?? record.status}
               style={{ minWidth: 90 }}
-              onChange={newStatus => handleInstantStatusChange(record._id, newStatus as "active" | "block")}
+              onChange={(newStatus) =>
+                handleInstantStatusChange(
+                  record._id,
+                  newStatus as "active" | "block"
+                )
+              }
               disabled={isUpdating}
               size="small"
             >
@@ -230,7 +288,7 @@ const User: React.FC = () => {
   // Table rowSelection with checkmarks (and Select All)
   const rowSelection = {
     selectedRowKeys,
-    columnPosition: 'left' as const,
+    columnPosition: "left" as const,
     selections: [
       Table.SELECTION_ALL,
       Table.SELECTION_INVERT,
@@ -253,14 +311,16 @@ const User: React.FC = () => {
     try {
       await sendPushNotification({
         usersId: selectedRowKeys.map(String),
-        message: messageText
+        message: messageText,
       }).unwrap();
       message.success("Notification sent successfully!");
       setMessageModalOpen(false);
       setMessageText("");
       setSelectedRowKeys([]); // Uncheck all selected after send (per instruction)
     } catch (e: any) {
-      message.error(e?.data?.message || e?.message || "Failed to send notification");
+      message.error(
+        e?.data?.message || e?.message || "Failed to send notification"
+      );
     }
   };
 
@@ -278,6 +338,37 @@ const User: React.FC = () => {
     }
   }, [data, limit, page]);
 
+  const handleAcceptUpdateRequest = async () => {
+    if (!updateRequestUser) return;
+    try {
+      await updatePendingUserProfile({
+        id: updateRequestUser._id,
+        status: "approved",
+      }).unwrap();
+      message.success("Profile update approved");
+      setUpdateRequestOpen(false);
+      setUpdateRequestUser(null);
+      refetch(); // Refetch the users list
+    } catch (e: any) {
+      message.error(e?.data?.message || "Approval failed");
+    }
+  };
+
+  const handleRejectUpdateRequest = async () => {
+    if (!updateRequestUser) return;
+    try {
+      await updatePendingUserProfile({
+        id: updateRequestUser._id,
+        status: "rejected",
+      }).unwrap();
+      message.success("Profile update rejected");
+      setUpdateRequestOpen(false);
+      setUpdateRequestUser(null);
+      refetch(); // Refetch the users list
+    } catch (e: any) {
+      message.error(e?.data?.message || "Rejection failed");
+    }
+  };
 
   return (
     <div>
@@ -312,36 +403,72 @@ const User: React.FC = () => {
               onClick={() => setMessageModalOpen(true)}
               size="large"
               style={{
-                transition: "opacity 0.2s"
+                transition: "opacity 0.2s",
               }}
             >
-             Send Notification
+              Send Notification
             </Button>
           </div>
         </div>
       </div>
-        <Table
-          rowKey="_id"
-          style={{ overflowX: "auto", marginTop: 20 }}
-          dataSource={userList}
-          columns={columns}
-          className="event-table-custom-gray event-table-gray-row-border"
-          pagination={pagination}
-          loading={isLoading}
-          scroll={
-            typeof window !== "undefined" && window.innerWidth < 600
-              ? undefined
-              : { y: `calc(100vh - 320px)` }
-          }
-          rowSelection={rowSelection}
-        />
-      <UserInfoModal user={viewItem} open={viewOpen} onClose={() => setViewOpen(false)} />
+      {/* <Table
+        rowKey="_id"
+        style={{ overflowX: "auto", marginTop: 20 }}
+        dataSource={userList}
+        columns={columns}
+        className="event-table-custom-gray event-table-gray-row-border"
+        pagination={pagination}
+        loading={isLoading}
+        scroll={
+          typeof window !== "undefined" && window.innerWidth < 600
+            ? undefined
+            : { y: `calc(100vh - 320px)` }
+        }
+        rowSelection={rowSelection}
+      /> */}
+      <Table
+        rowKey="_id"
+        dataSource={userList}
+        columns={columns.map((col) => ({
+          ...col,
+          // Optional: hide certain columns on small screens
+          responsive: col.responsive || ["xs", "sm", "md", "lg", "xl"],
+        }))}
+        className="event-table-custom-gray event-table-gray-row-border"
+        pagination={pagination}
+        loading={isLoading}
+        rowSelection={rowSelection}
+        style={{ width: "100%", overflowX: "auto", marginTop: 20 }}
+        scroll={
+          typeof window !== "undefined"
+            ? {
+                x: 800, // horizontal scroll if content exceeds 800px
+                y: window.innerWidth < 600 ? undefined : `calc(100vh - 320px)`, // vertical scroll only on desktop
+              }
+            : undefined
+        }
+      />
+
+      <UserInfoModal
+        user={viewItem}
+        open={viewOpen}
+        onClose={() => setViewOpen(false)}
+      />
+      <UpdateRequestModal
+        open={updateRequestOpen}
+        user={updateRequestUser}
+        onClose={() => setUpdateRequestOpen(false)}
+        onAccept={handleAcceptUpdateRequest}
+        onReject={handleRejectUpdateRequest}
+        loading={isUpdatingProfile}
+      />
+
       <SendMessageModal
         open={messageModalOpen}
         loading={isNotificationSending}
         messageText={messageText}
         setMessageText={setMessageText}
-        selectedUsers={userList.filter(u => selectedRowKeys.includes(u._id))}
+        selectedUsers={userList.filter((u) => selectedRowKeys.includes(u._id))}
         onOk={onMessageSend}
         onCancel={onMessageCancel}
       />

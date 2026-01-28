@@ -244,7 +244,7 @@ export const MemberShipApplicationCreate: React.FC<{
                 onClick={addFamilyMember}
                 block
               >
-                Add Family Member
+                + Add Family Member
               </Button>
             </div>
           )}

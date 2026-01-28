@@ -1,6 +1,7 @@
 import { Descriptions, Modal } from "antd";
 import { type UserType } from ".";
 import dayjs from "dayjs";
+import { imageUrl } from "../../redux/api/baseApi";
 
 export const UserInfoModal: React.FC<{
   user: UserType | null;
@@ -13,7 +14,9 @@ export const UserInfoModal: React.FC<{
         <div style={{ textAlign: "center", marginBottom: 16 }}>
           {user.profileImage ? (
             <img
-              src={user.profileImage}
+              src={user.profileImage?.startsWith("http")
+                ? user.profileImage
+                : imageUrl + user.profileImage}
               alt={user.name}
               style={{
                 maxHeight: 180,
