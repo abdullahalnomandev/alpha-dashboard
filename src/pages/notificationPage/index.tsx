@@ -1,238 +1,206 @@
 import { useState, useEffect } from "react";
 import { FiBell } from "react-icons/fi";
-import { useGetNotificationsQuery, useUpdateNotificationMutation } from "../../redux/apiSlices/notificationSlice";
+import {
+  useDeleteNotificationMutation,
+  useGetNotificationsQuery,
+  useUpdateNotificationMutation,
+} from "../../redux/apiSlices/notificationSlice";
 import { Spin, Pagination, Button } from "antd";
 import { useNavigate } from "react-router-dom";
+import { DeleteOutlined, LoadingOutlined } from "@ant-design/icons";
 
-// Utility for date display
+/* ---------- Utils ---------- */
 function formatDate(dateString?: string) {
   if (!dateString) return "";
   const date = new Date(dateString);
-  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
-// Professional notification colors
-const COLOR_SEEN_BG = "#f6f8fa"; // subtle gray/neutral
-const COLOR_UNSEEN_BG = "#eaf3ff"; // subtle blue
-const COLOR_SEEN_TEXT = "#9aa5ba";
-const COLOR_UNSEEN_TEXT = "#293146";
+/* ---------- Colors ---------- */
+const COLOR_SEEN_BG = "#f6f8fa";
+const COLOR_UNSEEN_BG = "#eaf3ff";
 const COLOR_UNSEEN_BORDER = "#61a5fa";
 const COLOR_HOVER_BG = "#e2ebfb";
 
 const NotificationPage: React.FC = () => {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(10);
+  const pageSize = 10;
 
-  // Fetch notifications
-  const { data,refetch, isLoading } = useGetNotificationsQuery({
+  const { data, isLoading, refetch } = useGetNotificationsQuery({
     page,
     limit: pageSize,
   });
+
   const [updateNotification] = useUpdateNotificationMutation();
+  const [deleteNotification, { isLoading: deleteLoading }] = useDeleteNotificationMutation();
 
-  // Get notifications (using _id as per model)
-  const notifications: any[] = data?.data || [];
+  const notifications = data?.data || [];
   const total = data?.pagination?.total ?? 0;
-  const backendPage = data?.pagination?.page ?? 1;
 
-  useEffect(() => {
-    if (!isLoading && typeof backendPage === "number" && backendPage !== page) {
-      setPage(backendPage);
+  const handleClick = async (item: any) => {
+    if (!item.seen) {
+      await updateNotification({
+        id: item._id,
+        data: { seen: true },
+      });
+      refetch();
     }
-    // eslint-disable-next-line
-  }, [backendPage, isLoading]);
-
-  // Handle notification click: mark as seen if not yet, then redirect
-  const handleNotificationClick = async (item: any) => {
-    try {
-      // 1️⃣ Mark as seen if not already
-      if (!item.seen) {
-        await updateNotification({
-          id: item._id,
-          data: { seen: true },
-        }).unwrap();
-  
-        item.seen = true;
-      }
-    } catch (err) {
-      // silently ignore
-    }
-  
-    refetch();
-  
-    // 3️⃣ Navigate to the path
-    if (item.path) {
-      navigate(item.path);
-    }
+    if (item.path) navigate(item.path);
   };
-  
 
   return (
     <div
       style={{
         background: "#f7fafd",
+        height: "100vh",
+        padding: 12,
       }}
     >
-      {/* Main Body */}
       <div
         style={{
           background: "#fff",
           borderRadius: 15,
-          boxShadow: "0 1.5px 4px #e4e8ee, 0 6px 40px 0 #e3e6ee40",
-          padding: "10px",
+          padding: 10,
+          boxShadow: "0 1.5px 4px #e4e8ee",
+          height: "calc(100vh - 150px)",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
         }}
       >
         {isLoading ? (
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: 320 }}>
-            <Spin tip="Loading notifications..." size="large" />
-          </div>
-        ) : notifications.length === 0 ? (
+          /* 🔄 Centered Loader */
           <div
             style={{
-              color: "#7A869A",
-              textAlign: "center",
-              padding: "48px 0",
-              fontSize: 16,
-              fontWeight: 500,
-              background: "#f4f6fa",
-              borderRadius: 12,
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            No notifications found.
-            <div style={{ marginTop: 22 }}>
-              <Button
-                type="primary"
-                onClick={() => navigate("/user/contact-from")}
-              >
-                Go to Contact Form
-              </Button>
-            </div>
+            <Spin size="large" tip="Loading notifications..." />
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {notifications?.map((item, idx) => {
-              const seen = !!item.seen;
-              // background and color based on seen/unseen
-              const bgColor = seen ? COLOR_SEEN_BG : COLOR_UNSEEN_BG;
-              const borderLeft = seen ? undefined : `3px solid ${COLOR_UNSEEN_BORDER}`;
-              const titleColor = seen ? COLOR_SEEN_TEXT : COLOR_UNSEEN_TEXT;
-              // subtle hover effect for unseen
-              return (
-                <div
-                  key={item._id || idx}
-                  tabIndex={0}
-                  onClick={() => handleNotificationClick(item)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    background: bgColor,
-                    borderRadius: 10,
-                    // backgroundColor:'red',
-                    borderLeft,
-                    height: "calc(100vh - 35%)",
-                    overflow:'hidden',
-                    marginBottom: "0",
-                    boxShadow: "0 0.5px 2.5px #e2e5ec29",
-                    cursor: "pointer",
-                    transition: "background 0.16s,border 0.15s",
-                    outline: "none",
-                  }}
-                  onMouseOver={e => {
-                    if (!seen) (e.currentTarget.style.background = COLOR_HOVER_BG);
-                  }}
-                  onMouseOut={e => {
-                    if (!seen) (e.currentTarget.style.background = COLOR_UNSEEN_BG);
-                  }}
-                  onFocus={e => {
-                    if (!seen) (e.currentTarget.style.background = COLOR_HOVER_BG);
-                  }}
-                  onBlur={e => {
-                    if (!seen) (e.currentTarget.style.background = COLOR_UNSEEN_BG);
-                  }}
-                  aria-label={`Notification: ${item.title ?? "Email Notification"}`}
-                >
+          <>
+            {/* 🔹 Scrollable list */}
+            <div
+              style={{
+                flex: 1,
+                overflowY: "auto",
+                paddingRight: 4,
+              }}
+            >
+              {notifications.map((item: any) => {
+                const seen = item.seen;
+
+                return (
                   <div
+                    key={item._id}
+                    className="notification-item"
+                    onClick={() => handleClick(item)}
                     style={{
-                      width: 50,
-                      minWidth: 60,
-                      height: 50,
-                      background: seen ? "#f0f3f7" : "#e3eefd",
-                      borderRadius: 8,
-                      margin: "0 8px",
-                      marginRight: 15,
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "center",
-                      border: seen ? "1px solid #f0f3f7" : "1.5px solid #afd8fa",
+                      background: seen ? COLOR_SEEN_BG : COLOR_UNSEEN_BG,
+                      borderLeft: seen
+                        ? undefined
+                        : `3px solid ${COLOR_UNSEEN_BORDER}`,
+                      borderRadius: 10,
+                      padding: "10px 8px",
+                      marginBottom: 10,
+                      cursor: "pointer",
+                      transition: "background 0.15s",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!seen)
+                        e.currentTarget.style.background = COLOR_HOVER_BG;
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!seen)
+                        e.currentTarget.style.background = COLOR_UNSEEN_BG;
                     }}
                   >
-                    <FiBell style={{ fontSize: 21, color: seen ? "#aac2da" : "#2d8cff" }} />
+                    {/* Icon */}
+                    <div style={{ margin: "0 12px" }}>
+                      <FiBell
+                        size={20}
+                        color={seen ? "#9aa5ba" : "#2d8cff"}
+                      />
+                    </div>
+
+                    {/* Content */}
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: seen ? 400 : 600 }}>
+                        {item.title}
+                      </div>
+                      <div style={{ fontSize: 13, color: "#5f6b7a" }}>
+                        {item.message}
+                      </div>
+                      <div style={{ fontSize: 12, color: "#94a3bb" }}>
+                        {formatDate(item.createdAt)}
+                      </div>
+                    </div>
+
+                    {/* Delete (hover only) */}
+                    <div className="delete-action">
+                      <Button
+                        type="text"
+                        danger
+                        size="small"
+                        icon={deleteLoading ? <LoadingOutlined /> : <DeleteOutlined />}
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          await deleteNotification(item._id);
+                          refetch();
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
-                    <span style={{
-                      color: titleColor,
-                      fontWeight: seen ? 400 : 600,
-                      fontSize: 15,
-                      letterSpacing: 0.14,
-                      lineHeight: "19px",
-                      textOverflow: "ellipsis",
-                      overflow: "hidden",
-                      whiteSpace: "nowrap"
-                    }}>
-                      {item.title ?? "Email Notification"}
-                      {!seen && (
-                        <span style={{
-                          marginLeft: 7,
-                          fontSize: 9.5,
-                          background: "#e1edf9",
-                          color: "#2185d0",
-                          borderRadius: 7,
-                          padding: "2px 9px",
-                          fontWeight: 600,
-                          textTransform: "uppercase",
-                          letterSpacing: 0.5,
-                          verticalAlign: "middle",
-                        }}>
-                          NEW
-                        </span>
-                      )}
-                    </span>
-                    <span style={{
-                      color: seen ? "#b2b9c3" : "#345875",
-                      fontSize: 13.3,
-                      fontWeight: 400,
-                      letterSpacing: 0.11,
-                      marginTop: 1,
-                      textOverflow: "ellipsis",
-                      overflow: "hidden",
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical"
-                    }}>
-                      {item.message ?? "Lorem ipsum dolor sit amet, put all your content"}
-                    </span>
-                    <span style={{ color: "#94a3bb", fontSize: 12, marginTop: 2 }}>
-                      {formatDate(item.createdAt)}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-            {/* Pagination */}
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
-                <Pagination
-                  current={page}
-                  pageSize={pageSize}
-                  total={total}
-                  showSizeChanger={false}
-                  onChange={newPage => setPage(newPage)}
-                  style={{ background: "none" }}
-                />
+                );
+              })}
             </div>
-          </div>
+
+            {/* 🔹 Fixed Pagination */}
+            <div
+              style={{
+                borderTop: "1px solid #eef1f6",
+                paddingTop: 10,
+                display: "flex",
+                justifyContent: "flex-end",
+              }}
+            >
+              <Pagination
+                current={page}
+                pageSize={pageSize}
+                total={total}
+                showSizeChanger={false}
+                onChange={(p) => setPage(p)}
+              />
+            </div>
+          </>
         )}
       </div>
+
+      {/* 🔹 Hover CSS */}
+      <style>
+        {`
+          .delete-action {
+            opacity: 0;
+            transform: translateX(6px);
+            transition: all 0.15s ease;
+          }
+
+          .notification-item:hover .delete-action {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        `}
+      </style>
     </div>
   );
 };

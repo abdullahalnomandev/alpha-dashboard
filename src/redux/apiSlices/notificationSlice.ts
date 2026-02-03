@@ -39,6 +39,12 @@ const notificationSlice = api.injectEndpoints({
                 method: "POST",
             })
         }),
+        deleteNotification: builder.mutation({
+            query: (id: string) => ({
+                url: `${LS_API}/${id}`,
+                method: "DELETE",
+            })
+        })
     }),
 });
 
@@ -47,4 +53,5 @@ export const {
     useUpdateNotificationMutation,
     useGetNotificationCountQuery,
     useClearNotificationsMutation,
+    useDeleteNotificationMutation
 } = notificationSlice;
