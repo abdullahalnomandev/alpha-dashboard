@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { FiBell } from "react-icons/fi";
 import {
   useDeleteNotificationMutation,
