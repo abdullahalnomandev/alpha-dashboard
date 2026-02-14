@@ -99,13 +99,13 @@ export const ClubModel: React.FC<{
         >
           <Input placeholder="Location" />
         </Form.Item>
-        <Form.Item
+        {/* <Form.Item
           label="Member"
           name="limitOfMember"
           rules={[{ required: true, message: "Please set the member" }]}
         >
           <Input type="number" min={1} placeholder="Number of members" />
-        </Form.Item>
+        </Form.Item> */}
         <Form.Item
           label="Description"
           required={false}
