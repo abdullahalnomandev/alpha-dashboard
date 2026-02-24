@@ -4,7 +4,6 @@ import {
   Typography,
   Input,
   Button,
-  Spin,
   message,
   Space,
   Popconfirm,
@@ -39,12 +38,12 @@ export type FamilyMember = {
 
 export type MembershipApplicationType = {
   _id: string;
+  profileImage: string;
   membershipType: string;
   name: string;
   email: string;
   phone: string;
   address: string;
-  image:string;
   familyMembers: FamilyMember[];
   membershipStatus: string;
   expireId: string;
@@ -52,6 +51,23 @@ export type MembershipApplicationType = {
   updatedAt: string;
   memberShipId: string;
   from?: string; // Add new optional "from" field
+
+  jobTitle: String ;
+  organizationName: String;
+  dateOfBirth: Date ;
+  nationality: String ;
+  countryOfResidence: String ;
+  residenceAddress: String ;
+  industrySector: String ;
+  yearsOfExperience: Number;
+  currentEmployer: String ;
+  workLocation: String ;
+  annualGrossSalary: Number ;
+  benefitsAndLifestyleInterests: [String] ; // Array of strings
+  image: [String] ; // array of string
+  logo: [String] ; // array of string
+  confirmAcknowledgement: Boolean ;
+  confirmAgreement: Boolean ;
 };
 
 /* Status ENUM */
@@ -124,10 +140,10 @@ const MembershipApplication: React.FC = () => {
   const [limit, setLimit] = useState(10);
 
   const [viewItem, setViewItem] = useState<MembershipApplicationType | null>(
-    null
+    null,
   );
   const [editItem, setEditItem] = useState<MembershipApplicationType | null>(
-    null
+    null,
   );
 
   const [viewOpen, setViewOpen] = useState(false);
@@ -161,11 +177,10 @@ const MembershipApplication: React.FC = () => {
   const [deleteApplication, { isLoading: deleteLoading }] =
     useDeleteMembershipApplicationMutation();
 
-
   // Handler for accepting/rejecting with confirmation modal
   const handleDecision = (
     type: "accept" | "reject",
-    record: MembershipApplicationType
+    record: MembershipApplicationType,
   ) => {
     setDecisionModal({
       open: true,
@@ -355,7 +370,7 @@ const MembershipApplication: React.FC = () => {
         ),
       },
     ],
-    [updateLoading, deleteLoading, page, limit]
+    [updateLoading, deleteLoading, page, limit],
   );
 
   const pagination: TablePaginationConfig = {
@@ -416,16 +431,16 @@ const MembershipApplication: React.FC = () => {
           decisionModal.type === "accept"
             ? "Accept"
             : decisionModal.type === "reject"
-            ? "Reject"
-            : "Confirm"
+              ? "Reject"
+              : "Confirm"
         }
         cancelText="Cancel"
         title={
           decisionModal.type === "accept"
             ? "Confirm Accept"
             : decisionModal.type === "reject"
-            ? "Confirm Reject"
-            : "Confirm"
+              ? "Confirm Reject"
+              : "Confirm"
         }
         destroyOnClose
       >
@@ -433,8 +448,8 @@ const MembershipApplication: React.FC = () => {
           {decisionModal.type === "accept"
             ? "Are you sure you want to accept this membership application? This will activate the membership."
             : decisionModal.type === "reject"
-            ? "Are you sure you want to reject this membership application? This will change the status to Rejected."
-            : ""}
+              ? "Are you sure you want to reject this membership application? This will change the status to Rejected."
+              : ""}
         </div>
       </Modal>
 
@@ -477,20 +492,18 @@ const MembershipApplication: React.FC = () => {
       </div>
 
       {/* Table */}
-      <Spin spinning={isLoading}>
-        <Table
-          rowKey="_id"
-          style={{ overflowX: "auto", marginTop: 20 }}
-          dataSource={data?.data || []}
-          columns={columns}
-          className="membership-application-table"
-          pagination={pagination}
-          loading={isLoading}
-          scroll={
-            window.innerWidth < 600 ? undefined : { y: `calc(100vh - 320px)` }
-          }
-        />
-      </Spin>
+      <Table
+        rowKey="_id"
+        style={{ overflowX: "auto", marginTop: 20 }}
+        dataSource={data?.data || []}
+        columns={columns}
+        className="membership-application-table"
+        pagination={pagination}
+        loading={isLoading}
+        scroll={
+          window.innerWidth < 600 ? undefined : { y: `calc(100vh - 320px)` }
+        }
+      />
     </div>
   );
 };
