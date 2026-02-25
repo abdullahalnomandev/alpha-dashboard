@@ -30,6 +30,7 @@ import { RiFileList3Line, RiMailSendLine } from "react-icons/ri";
 import EventRegistrationPage from "../component/event-registration";
 import ContactUsPage from "../pages/settings/ContactUsPage";
 import { IoCallOutline } from "react-icons/io5";
+import PartnerShipApplicationPage from "../pages/partnership-application";
 
 
 export const MENU_CONFIG = [
@@ -46,6 +47,13 @@ export const MENU_CONFIG = [
     icon: <SiReacthookform />,
     element: <MembershipApplicationPage />,
     path: '/membership-application',
+  },
+  {
+    key: 'partnership-application',
+    label: 'Partner Requests', 
+    icon: <LuBookUser />,
+    element: <PartnerShipApplicationPage />,
+    path: '/partnership-application',
   },
   {
     key: 'contact-from',

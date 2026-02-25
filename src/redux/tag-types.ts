@@ -1,21 +1,21 @@
 export const TagTypes = {
   user: "user",
-  notification:"notification",
-  event:'event',
-  club:'club',
-  membershipApplication:"membershipApplication",
-  story:"story",
-  sponsor:'sponsor',
-  offerCategory:'offerCategory',
-  offer:"offer",
-  setting:"setting",
-  membershipFeature:'membershipFeature',
-  membershipPlan:"membershipPlan",
-  faq:"faq",
-  contactForm:"contactForm",
-  eventRegistration:"eventRegistration",
-  contactUs:"contactUs"
-  
+  notification: "notification",
+  event: 'event',
+  club: 'club',
+  membershipApplication: "membershipApplication",
+  story: "story",
+  sponsor: 'sponsor',
+  offerCategory: 'offerCategory',
+  offer: "offer",
+  setting: "setting",
+  membershipFeature: 'membershipFeature',
+  membershipPlan: "membershipPlan",
+  faq: "faq",
+  contactForm: "contactForm",
+  eventRegistration: "eventRegistration",
+  contactUs: "contactUs",
+  partnershipApplication: "partnershipApplication",
 };
 
 
