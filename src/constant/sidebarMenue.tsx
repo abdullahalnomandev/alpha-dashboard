@@ -19,7 +19,7 @@ import ExclusiveOfferPage from "../pages/ExclusiveOfferPage";
 import AboutPage from "../pages/settings/AboutPage";
 import PrivacyPolicyPage from "../pages/settings/PrivacyPolicyPage";
 import TermsAndConditionPage from "../pages/settings/TermsAndConditionPage";
-import {LuBookUser} from 'react-icons/lu';
+import { LuBookUser } from 'react-icons/lu';
 import { BsListCheck } from "react-icons/bs";
 import { CgMenuBoxed } from "react-icons/cg";
 import MemberShipFeaturesPage from "../pages/memberships/MemberShipFeaturesPage";
@@ -43,31 +43,31 @@ export const MENU_CONFIG = [
   },
   {
     key: 'membership-application',
-    label: 'Member Requests', 
+    label: 'Member Requests',
     icon: <SiReacthookform />,
     element: <MembershipApplicationPage />,
     path: '/membership-application',
   },
   {
     key: 'partnership-application',
-    label: 'Partner Requests', 
+    label: 'Partner Requests',
     icon: <LuBookUser />,
     element: <PartnerShipApplicationPage />,
     path: '/partnership-application',
   },
   {
-    key: 'contact-from',
-    label: 'Application Form', 
-    icon: <RiMailSendLine />,
-    element: <ContactFormPage />,
-    path: '/user/contact-from',
-  },
-  {
     key: 'user-management',
-    label: 'User Management', 
+    label: 'User Management',
     icon: <HiOutlineUsers />,
     element: <UserManagementPage />,
     path: '/users',
+  },
+  {
+    key: 'contact-from',
+    label: 'Application Form',
+    icon: <RiMailSendLine />,
+    element: <ContactFormPage />,
+    path: '/user/contact-from',
   },
   {
     key: 'event',
@@ -79,7 +79,7 @@ export const MENU_CONFIG = [
   {
     key: 'event-registration',
     label: 'Event Registrations',
-    icon: <RiFileList3Line  />,
+    icon: <RiFileList3Line />,
     element: <EventRegistrationPage />,
     path: '/event-registration',
   },
@@ -134,7 +134,7 @@ export const MENU_CONFIG = [
       {
         key: 'membership-features',     // make the key unique among all menu items
         label: 'Features',
-        icon: <BsListCheck  />,
+        icon: <BsListCheck />,
         element: <MemberShipFeaturesPage />,
         path: '/settings/membership-features',
       },
@@ -170,14 +170,14 @@ export const MENU_CONFIG = [
       {
         key: 'privacy-policy',     // make the key unique among all menu items
         label: 'Privacy Policy',
-        icon: <MdOutlinePrivacyTip  />,
+        icon: <MdOutlinePrivacyTip />,
         element: <PrivacyPolicyPage />,
         path: '/settings/privacy-policy',
       },
       {
         key: 'terms-and-conditions',     // make the key unique among all menu items
         label: 'Terms & Conditions',
-        icon: <BiMessageSquareError  />,
+        icon: <BiMessageSquareError />,
         element: <TermsAndConditionPage />,
         path: '/settings/terms-and-conditions',
       },

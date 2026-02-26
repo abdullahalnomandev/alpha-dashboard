@@ -16,10 +16,9 @@ import { EyeOutlined, DeleteOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
 import { PartnerShipApplicationInfoModel } from "./PartnerShipApplicationInfoModel";
-import { PartnerShipApplicationCreate } from "./PartnerShipApplicationCreate";
 import { FaRegFileExcel } from "react-icons/fa6";
-import { exportPartnerShipCsv, handleExportToCsv } from "./utils/handleExportToCsv";
 import { useCreatepartnerShipApplicationMutation, useDeletepartnerShipApplicationMutation, useGetpartnerShipApplicationsQuery, useUpdatepartnerShipApplicationMutation } from "../../redux/apiSlices/partnershipApplicationSlice";
+import { handleExportPartnershipToCsv } from "./utils/handleExportToCsv";
 const { Text } = Typography;
 
 /* =====================
@@ -33,6 +32,7 @@ export type FamilyMember = {
 
 export type PartnerShipApplicationType = {
   _id: string;
+  profileImage: string;
   companyName: string;
   industry: string;
   contactName: string;
@@ -54,7 +54,7 @@ const STATUS = {
 };
 
 /* Colorful/Shadow for Status Buttons */
-const STATUS_STYLES: Record<string, React.CSSProperties> = {
+export const STATUS_STYLES: Record<string, React.CSSProperties> = {
   [STATUS.ACTIVE]: {
     color: "#52c41a",
     // Custom subtle green translucent shadow
@@ -314,7 +314,7 @@ const PartnerShipApplication: React.FC = () => {
                 <EyeOutlined />
               </Button>
             </Tooltip>
-            <Tooltip title="Edit">
+            {/* <Tooltip title="Edit">
               <Button
                 type="link"
                 style={{ color: "#2A62A6" }}
@@ -325,7 +325,7 @@ const PartnerShipApplication: React.FC = () => {
               >
                 <FiEdit />
               </Button>
-            </Tooltip>
+            </Tooltip> */}
             <Tooltip title="Delete">
               <Popconfirm
                 title="Delete this application?"
@@ -457,7 +457,7 @@ const PartnerShipApplication: React.FC = () => {
               type="primary"
               size="large"
               icon={<FaRegFileExcel style={{ fontSize: 18, marginRight: 6 }} />}
-              // onClick={() => exportPartnerShipCsv()}
+              onClick={() => handleExportPartnershipToCsv()}
             >
               Export as CSV
             </Button>

@@ -32,6 +32,44 @@ import { imageUrl } from "../../redux/api/baseApi";
 
 const { Text } = Typography;
 
+
+const STATUS = {
+  PENDING: "pending",
+  ACTIVE: "approved",
+  REJECTED: "rejected",
+};
+
+const STATUS_STYLES: Record<string, React.CSSProperties> = {
+  [STATUS.ACTIVE]: {
+    color: "#52c41a",
+    // Custom subtle green translucent shadow
+    boxShadow: "0 0 0 2px rgba(82, 196, 26, 0.08)",
+    backgroundColor: "rgba(82,196,26,0.1)",
+    borderRadius: 6,
+    padding: "2px 10px",
+    fontWeight: 500,
+    maxWidth: 80,
+    display: "inline-block",
+  },
+  [STATUS.PENDING]: {
+    color: "#faad14",
+    boxShadow: "0 0 0 2px rgba(250, 173, 20, 0.08)",
+    backgroundColor: "rgba(250,173,20,0.1)",
+    borderRadius: 6,
+    padding: "2px 10px",
+    fontWeight: 500,
+    display: "inline-block",
+  },
+  [STATUS.REJECTED]: {
+    color: "#f5222d",
+    boxShadow: "0 0 0 2px rgba(245, 34, 45, 0.08)",
+    backgroundColor: "rgba(245,34,45,0.07)",
+    borderRadius: 6,
+    padding: "2px 10px",
+    fontWeight: 500,
+    display: "inline-block",
+  },
+};
 export type ExclusiveOfferType = {
   _id: string;
   name: string;
@@ -60,7 +98,7 @@ const ExclusiveOffer: React.FC = () => {
 
   const [viewOpen, setViewOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
-
+const [decisionLoading, setDecisionLoading] = useState<Record<string, { approve?: boolean; rejected?: boolean }>>({});
   // Whether we're in "add" or "edit" mode for the model
   const [isAddMode, setIsAddMode] = useState<boolean>(false);
 
@@ -143,6 +181,42 @@ const ExclusiveOffer: React.FC = () => {
     },
     [updateExclusiveOffer, refetch]
   );
+
+
+  // ✅ Open Decision Modal
+const handleDecision = async (
+  type: "approved" | "rejected",
+  record: ExclusiveOfferType
+) => {
+  setDecisionLoading(prev => ({
+    ...prev,
+    [record._id]: { ...(prev[record._id] || {}), [type]: true },
+  }));
+
+  try {
+    const formData = new FormData();
+    formData.append("status", type);
+    if(type === "approved"){
+      formData.append("published", "true");
+    }
+
+    await updateExclusiveOffer({ id: record._id, formData }).unwrap();
+
+    message.success(
+      type === "approved" ? "Offer Approved" : "Offer Rejected"
+    );
+
+    refetch();
+  } catch {
+    message.error("Failed to update status");
+  }
+
+  setDecisionLoading(prev => ({
+    ...prev,
+    [record._id]: { ...(prev[record._id] || {}), [type]: false },
+  }));
+};
+
 
   const columns: TableColumnsType<ExclusiveOfferType> = useMemo(
     () => [
@@ -227,6 +301,63 @@ const ExclusiveOffer: React.FC = () => {
             disabled={updateLoading}
           />
         ),
+      },
+      {
+        title: "Status",
+        dataIndex: "status", // make sure this matches your data
+        key: "status",
+        render: (status: string) => (
+          <span
+            style={{
+              ...STATUS_STYLES[status],
+              whiteSpace: "nowrap",   // ✅ prevent line break
+            }}
+          >
+            {status && status.charAt(0).toUpperCase() + status.slice(1)}
+          </span>
+        ),
+      },
+      {
+        title: "Decision",
+        align: "center",
+        render: (_, record) =>
+          record.status === STATUS.PENDING ? (
+            <Space>
+              <Popconfirm
+                title="Are you sure you want to approve this offer?"
+                onConfirm={() => handleDecision("approved", record)}
+                okText="Yes"
+                cancelText="No"
+              >
+                <Button
+                  type="primary"
+                  size="small"
+                  style={{ background: "#52c41a", borderColor: "#52c41a" }}
+                  loading={!!decisionLoading[record._id]?.approve}
+                >
+                  Approve
+                </Button>
+              </Popconfirm>
+
+              <Popconfirm
+                title="Are you sure you want to reject this offer?"
+                onConfirm={() => handleDecision("rejected", record)}
+                okText="Yes"
+                cancelText="No"
+              >
+                <Button
+                  type="primary"
+                  size="small"
+                  danger
+                  loading={!!decisionLoading[record._id]?.rejected}
+                >
+                  Reject
+                </Button>
+              </Popconfirm>
+            </Space>
+          ) : (
+            "-"
+          ),
       },
       {
         title: "Action",
@@ -383,22 +514,20 @@ const ExclusiveOffer: React.FC = () => {
         </div>
 
         {/* Table */}
-        <Spin spinning={isLoading}>
-          <Table
-            rowKey="_id"
-            style={{ overflowX: "auto", marginTop: 20 }}
-            dataSource={data?.data || []}
-            columns={columns}
-            className="event-table-custom-gray event-table-gray-row-border"
-            pagination={pagination}
-            loading={isLoading}
-            scroll={
-              window.innerWidth < 600
-                ? undefined
-                : { y: `calc(100vh - 320px)` }
-            }
-          />
-        </Spin>
+        <Table
+          rowKey="_id"
+          style={{ overflowX: "auto", marginTop: 20 }}
+          dataSource={data?.data || []}
+          columns={columns}
+          className="event-table-custom-gray event-table-gray-row-border"
+          pagination={pagination}
+          loading={isLoading}
+          scroll={
+            window.innerWidth < 600
+              ? undefined
+              : { y: `calc(100vh - 320px)` }
+          }
+        />
       </div>
     </EditorProvider>
   );

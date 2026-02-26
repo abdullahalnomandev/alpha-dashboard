@@ -194,14 +194,14 @@ const EventRegistrationPage: React.FC = () => {
         title: "User Email",
         dataIndex: ["user", "email"],
         render: (_: string, record: EventRegistrationType) => (
-          <span style={{ color: "#2A62A6" }}>{record.user.email}</span>
+          <span style={{ color: "#2A62A6" }}>{record.user?.email}</span>
         ),
       },
       {
         title: "User Phone",
         dataIndex: ["user", "phone"],
         render: (_: string, record: EventRegistrationType) => (
-          <span>{record.user.phone}</span>
+          <span>{record.user?.phone}</span>
         ),
       },
       {
