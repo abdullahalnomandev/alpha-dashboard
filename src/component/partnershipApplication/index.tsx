@@ -11,13 +11,13 @@ import {
   Modal,
 } from "antd";
 import type { TableColumnsType, TablePaginationConfig } from "antd";
-import { FiEdit, FiSearch } from "react-icons/fi";
+import {  FiSearch } from "react-icons/fi";
 import { EyeOutlined, DeleteOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
 import { PartnerShipApplicationInfoModel } from "./PartnerShipApplicationInfoModel";
 import { FaRegFileExcel } from "react-icons/fa6";
-import { useCreatepartnerShipApplicationMutation, useDeletepartnerShipApplicationMutation, useGetpartnerShipApplicationsQuery, useUpdatepartnerShipApplicationMutation } from "../../redux/apiSlices/partnershipApplicationSlice";
+import {  useDeletepartnerShipApplicationMutation, useGetpartnerShipApplicationsQuery, useUpdatepartnerShipApplicationMutation } from "../../redux/apiSlices/partnershipApplicationSlice";
 import { handleExportPartnershipToCsv } from "./utils/handleExportToCsv";
 const { Text } = Typography;
 
@@ -87,26 +87,26 @@ export const STATUS_STYLES: Record<string, React.CSSProperties> = {
 };
 
 // Only color, fontWeight and fontSize kept as per instruction
-const PartnerShip_TYPE_STYLES: Record<string, React.CSSProperties> = {
-  alpha: {
-    color: "#334155",
-    background: "#f8fafc",
-    borderRadius: 6,
-    fontWeight: 500,
-    fontSize: 15,
-    padding: "2px 10px",
-    display: "inline-block",
-  },
-  alpha_family: {
-    color: "#1c6758",
-    background: "#f6fffb",
-    borderRadius: 6,
-    fontWeight: 500,
-    fontSize: 15,
-    padding: "2px 10px",
-    display: "inline-block",
-  },
-};
+// const PartnerShip_TYPE_STYLES: Record<string, React.CSSProperties> = {
+//   alpha: {
+//     color: "#334155",
+//     background: "#f8fafc",
+//     borderRadius: 6,
+//     fontWeight: 500,
+//     fontSize: 15,
+//     padding: "2px 10px",
+//     display: "inline-block",
+//   },
+//   alpha_family: {
+//     color: "#1c6758",
+//     background: "#f6fffb",
+//     borderRadius: 6,
+//     fontWeight: 500,
+//     fontSize: 15,
+//     padding: "2px 10px",
+//     display: "inline-block",
+//   },
+// };
 
 /* =====================
    Main Page
@@ -115,16 +115,16 @@ const PartnerShipApplication: React.FC = () => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [viewOpen, setViewOpen] = useState(false);
 
   const [viewItem, setViewItem] = useState<PartnerShipApplicationType | null>(
     null,
   );
-  const [editItem, setEditItem] = useState<PartnerShipApplicationType | null>(
-    null,
-  );
+  // const [editItem, setEditItem] = useState<PartnerShipApplicationType | null>(
+  //   null,
+  // );
 
-  const [viewOpen, setViewOpen] = useState(false);
-  const [formOpen, setFormOpen] = useState(false);
+  // const [formOpen, setFormOpen] = useState(false);
 
   // New state for decision confirmation
   const [decisionModal, setDecisionModal] = useState<{
@@ -147,8 +147,8 @@ const PartnerShipApplication: React.FC = () => {
   const { data, isLoading, refetch } = useGetpartnerShipApplicationsQuery({
     query,
   });
-  const [createApplication, { isLoading: createLoading }] =
-    useCreatepartnerShipApplicationMutation();
+  // const [createApplication, { isLoading: createLoading }] =
+  //   useCreatepartnerShipApplicationMutation();
   const [updateApplication, { isLoading: updateLoading }] =
     useUpdatepartnerShipApplicationMutation();
   const [deleteApplication, { isLoading: deleteLoading }] =
