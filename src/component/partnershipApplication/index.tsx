@@ -40,7 +40,7 @@ export type PartnerShipApplicationType = {
   contactPhone: string;
   website: string;
   message: string;
-  partnerShipStatus: 'pending' | 'approved' | 'rejected'; // future-proof
+  partnerShipStatus: 'pending' | 'active' | 'rejected'; // future-proof
   createdAt: string; // ISO date string
   updatedAt: string; // ISO date string
   partnerShipId: string;
@@ -129,7 +129,7 @@ const PartnerShipApplication: React.FC = () => {
   // New state for decision confirmation
   const [decisionModal, setDecisionModal] = useState<{
     open: boolean;
-    type: "accept" | "reject" | null;
+    type: "active" | "reject" | null;
     record: PartnerShipApplicationType | null;
     loading: boolean;
   }>({
@@ -156,7 +156,7 @@ const PartnerShipApplication: React.FC = () => {
 
   // Handler for accepting/rejecting with confirmation modal
   const handleDecision = (
-    type: "accept" | "reject",
+    type: "active" | "reject",
     record: PartnerShipApplicationType,
   ) => {
     setDecisionModal({
@@ -173,7 +173,7 @@ const PartnerShipApplication: React.FC = () => {
 
     try {
       // --- CHANGE: send only updated PartnerShipStatus for decision action ---
-      if (decisionModal.type === "accept") {
+      if (decisionModal.type === "active") {
         await updateApplication({
           id: decisionModal.record._id,
           data: { PartnerShipStatus: STATUS.ACTIVE },
@@ -270,7 +270,7 @@ const PartnerShipApplication: React.FC = () => {
                 <Button
                   type="primary"
                   size="small"
-                  onClick={() => handleDecision("accept", record)}
+                  onClick={() => handleDecision("active", record)}
                   style={{
                     background: "#52c41a",
                     borderColor: "#52c41a",
@@ -402,7 +402,7 @@ const PartnerShipApplication: React.FC = () => {
         okButtonProps={{ loading: decisionModal.loading }}
         cancelButtonProps={{ disabled: decisionModal.loading }}
         okText={
-          decisionModal.type === "accept"
+          decisionModal.type === "active"
             ? "Accept"
             : decisionModal.type === "reject"
               ? "Reject"
@@ -410,7 +410,7 @@ const PartnerShipApplication: React.FC = () => {
         }
         cancelText="Cancel"
         title={
-          decisionModal.type === "accept"
+          decisionModal.type === "active"
             ? "Confirm Accept"
             : decisionModal.type === "reject"
               ? "Confirm Reject"
@@ -419,7 +419,7 @@ const PartnerShipApplication: React.FC = () => {
         destroyOnClose
       >
         <div>
-          {decisionModal.type === "accept"
+          {decisionModal.type === "active"
             ? "Are you sure you want to accept this PartnerShip application? This will activate the PartnerShip."
             : decisionModal.type === "reject"
               ? "Are you sure you want to reject this PartnerShip application? This will change the status to Rejected."

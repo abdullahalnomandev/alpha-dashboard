@@ -85,7 +85,7 @@ export const PartnerShipApplicationInfoModel: React.FC<{
             <span
               style={{
                 color:
-                  application.partnerShipStatus === "approved"
+                  application.partnerShipStatus === "active"
                     ? "#52c41a"
                     : application.partnerShipStatus === "pending"
                       ? "#faad14"
