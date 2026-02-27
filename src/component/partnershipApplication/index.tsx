@@ -176,13 +176,13 @@ const PartnerShipApplication: React.FC = () => {
       if (decisionModal.type === "active") {
         await updateApplication({
           id: decisionModal.record._id,
-          data: { PartnerShipStatus: STATUS.ACTIVE },
+          data: { partnerShipStatus: STATUS.ACTIVE },
         }).unwrap();
         message.success(`PartnerShip set to Active`);
       } else {
         await updateApplication({
           id: decisionModal.record._id,
-          data: { PartnerShipStatus: STATUS.REJECTED },
+          data: { partnerShipStatus: STATUS.REJECTED },
         }).unwrap();
         message.success(`PartnerShip Rejected`);
       }

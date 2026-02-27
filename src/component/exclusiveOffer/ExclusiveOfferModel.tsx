@@ -1,11 +1,12 @@
-import {  Form, Input, Modal, Upload, Switch, InputNumber, Select, message } from "antd";
+import { Form, Input, Modal, Upload, Switch, InputNumber, Select, message } from "antd";
 import type { UploadFile } from "antd/es/upload/interface";
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, use } from "react";
 import type { ExclusiveOfferType } from ".";
 import Editor from "react-simple-wysiwyg";
 import { UploadOutlined } from "@ant-design/icons";
 import { imageUrl } from "../../redux/api/baseApi";
 import { useGetOfferCategoriesQuery } from "../../redux/apiSlices/offerCategorySlice";
+import { useGetALlPartnerUsersQuery } from "../../redux/apiSlices/userSlice";
 
 // NOTE: image & description are not in ExclusiveOfferType, handled as optional on editEvent.
 
@@ -21,20 +22,38 @@ export const ExclusiveOfferModel: React.FC<{
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [html, setHtml] = useState<string>("");
   const [removedFiles, setRemovedFiles] = useState<string[]>([]);
-
+  const [userSearch, setUserSearch] = useState<string>("");
   // Fetch offer categories with high enough limit to show all
   const { data, isLoading } = useGetOfferCategoriesQuery({ query: { page: 1, limit: 100 } });
+  const { data: users, isLoading: usersLoading } =
+    useGetALlPartnerUsersQuery({
+      query: {
+        page: 1,
+        limit: 10,
+        searchTerm: userSearch,
+      },
+    });
+  console.log(users?.data?.data);
 
   // Memoize options from fetched ad categories
   const categoryOptions = useMemo(
     () =>
       data && Array.isArray(data.data)
         ? data.data.map((cat: any) => ({
-            label: cat.name,
-            value: cat._id,
-          }))
+          label: cat.name,
+          value: cat._id,
+        }))
         : [],
     [data]
+  );
+
+  const userOptions = useMemo(
+    () =>
+      users?.data?.data?.map((user: any) => ({
+        label: `${user.name} - ${user.partnerShipId}`,
+        value: user._id,
+      })) || [],
+    [users]
   );
 
   // Discount switch state (for UI)
@@ -52,6 +71,12 @@ export const ExclusiveOfferModel: React.FC<{
         category: editEvent.category?._id,
         discountValue: editEvent.discount?.value ?? 0,
         discountEnable: !!editEvent.discount?.enable,
+        user: editEvent?.user
+          ? {
+            value: editEvent.user._id,
+            label: `${editEvent.user.name}`,
+          }
+          : undefined,
       });
       setHtml((editEvent as any).description || "");
       setDiscountEnable(!!editEvent.discount?.enable);
@@ -116,6 +141,8 @@ export const ExclusiveOfferModel: React.FC<{
       const values = await form.validateFields();
       const formData = new FormData();
 
+      console.log(values);
+
       formData.append("name", values.name);
       formData.append("title", values.title);
       formData.append("address", values.address);
@@ -144,11 +171,19 @@ export const ExclusiveOfferModel: React.FC<{
         });
       }
 
+      if (values.user) {
+        formData.append(
+          "user",
+          typeof values.user === "object" ? values.user.value : values.user
+        );
+      }
       if (editEvent) {
         await onUpdate(editEvent._id, formData);
       } else {
         await onAdd(formData);
       }
+
+
       form.resetFields();
       setFileList([]);
       setHtml("");
@@ -230,6 +265,25 @@ export const ExclusiveOfferModel: React.FC<{
           />
         </Form.Item>
         <Form.Item
+          label="User"
+          name="user"
+          rules={[{ required: true, message: "Please select a user" }]}
+        >
+          <Select
+            placeholder={usersLoading ? "Loading users..." : "Search name or email"}
+            options={userOptions}
+            loading={usersLoading}
+            allowClear
+            showSearch
+            filterOption={false} // IMPORTANT (server side search)
+            onSearch={(value) => {
+              setUserSearch(value);
+            }}
+            optionFilterProp="label"
+          />
+        </Form.Item>
+
+        <Form.Item
           label="Enable Discount"
           name="discountEnable"
           valuePropName="checked"
@@ -251,9 +305,9 @@ export const ExclusiveOfferModel: React.FC<{
           rules={
             discountEnable
               ? [
-                  { required: true, message: "Please enter discount value" },
-                  { type: "number", min: 1, max: 100, message: "Enter 1-100" },
-                ]
+                { required: true, message: "Please enter discount value" },
+                { type: "number", min: 1, max: 100, message: "Enter 1-100" },
+              ]
               : []
           }
         >

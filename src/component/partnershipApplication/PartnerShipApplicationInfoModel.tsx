@@ -104,11 +104,6 @@ export const PartnerShipApplicationInfoModel: React.FC<{
               ? dayjs(application.createdAt).format("DD MMM YYYY")
               : "-"}
           </Descriptions.Item>
-          <Descriptions.Item label="Updated At">
-            {application.updatedAt
-              ? dayjs(application.updatedAt).format("DD MMM YYYY")
-              : "-"}
-          </Descriptions.Item>
         </Descriptions>
 
       </div>

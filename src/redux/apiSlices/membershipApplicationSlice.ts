@@ -31,15 +31,25 @@ const membershipApplicationSlice = api.injectEndpoints({
             invalidatesTags: [TagTypes.membershipApplication],
         }),
         // Update details for a specific membership application
-        updateMembershipApplication: builder.mutation({
-            query: ({ id, data }: { id: string, data: Record<string, any> }) => ({
-                url: `${LS_API}/${id}`,
-                method: "PATCH",
-                body: data,
-            }),
+        updateMembershipApplication: builder.mutation<
+            any,
+            { id: string; data: FormData | Record<string, any> }
+        >({
+            query: ({ id, data }) => {
+                const isFormData = data instanceof FormData;
+
+                return {
+                    url: `${LS_API}/${id}`,
+                    method: "PATCH",
+                    body: data,
+                    headers: isFormData
+                        ? undefined // Let the browser set Content-Type for FormData
+                        : { "Content-Type": "application/json" },
+                };
+            },
             invalidatesTags: (_result, _error, { id }) => [
                 TagTypes.membershipApplication,
-                { type: TagTypes.membershipApplication, id }
+                { type: TagTypes.membershipApplication, id },
             ],
         }),
         // Delete a membership application

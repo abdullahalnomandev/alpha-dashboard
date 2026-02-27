@@ -52,22 +52,22 @@ export type MembershipApplicationType = {
   memberShipId: string;
   from?: string; // Add new optional "from" field
 
-  jobTitle: String ;
+  jobTitle: String;
   organizationName: String;
-  dateOfBirth: Date ;
-  nationality: String ;
-  countryOfResidence: String ;
-  residenceAddress: String ;
-  industrySector: String ;
+  dateOfBirth: Date;
+  nationality: String;
+  countryOfResidence: String;
+  residenceAddress: String;
+  industrySector: String;
   yearsOfExperience: Number;
-  currentEmployer: String ;
-  workLocation: String ;
-  annualGrossSalary: Number ;
-  benefitsAndLifestyleInterests: [String] ; // Array of strings
-  image: [String] ; // array of string
-  logo: [String] ; // array of string
-  confirmAcknowledgement: Boolean ;
-  confirmAgreement: Boolean ;
+  currentEmployer: String;
+  workLocation: String;
+  annualGrossSalary: Number;
+  benefitsAndLifestyleInterests: [String]; // Array of strings
+  image: [String]; // array of string
+  logo: [String]; // array of string
+  confirmAcknowledgement: Boolean;
+  confirmAgreement: Boolean;
 };
 
 /* Status ENUM */
@@ -403,16 +403,17 @@ const MembershipApplication: React.FC = () => {
           setFormOpen(false);
           setEditItem(null);
         }}
-        onAdd={async (values) => {
-          await createApplication(values).unwrap();
+        onAdd={async (formData: FormData) => {
+          await createApplication(formData).unwrap();
           message.success("Membership application added");
           setFormOpen(false);
           refetch();
         }}
-        onUpdate={async (id, values) => {
-          // Don't send email on update (remove email from values)
-          const { email, ...noEmail } = values;
-          await updateApplication({ id, data: noEmail }).unwrap();
+        onUpdate={async (id: string, formData: FormData) => {
+          await updateApplication({
+            id,
+            data: formData,
+          }).unwrap();
           message.success("Membership application updated");
           setFormOpen(false);
           setEditItem(null);

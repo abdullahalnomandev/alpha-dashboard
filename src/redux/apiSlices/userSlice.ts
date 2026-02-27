@@ -4,17 +4,17 @@ import { TagTypes } from "../tag-types";
 const userSlice = api.injectEndpoints({
     endpoints: (builder) => ({
         getUsers: builder.query({
-            query: ({query}:{query?:Record<string, any>}) => {
+            query: ({ query }: { query?: Record<string, any> }) => {
                 return {
                     url: "/user",
                     params: query || {},
                     method: "GET",
                 };
             },
-            
+
         }),
         changeStatusUser: builder.mutation({
-            query: ({id}:{id:string}) => {
+            query: ({ id }: { id: string }) => {
                 return {
                     method: "PATCH",
                     url: `/user/${id}`,
@@ -30,7 +30,7 @@ const userSlice = api.injectEndpoints({
                     formData: true,
                 };
             },
-            invalidatesTags: [TagTypes.user], 
+            invalidatesTags: [TagTypes.user],
         }),
         updateSingleUser: builder.mutation({
             query: ({ id, formData }: { id: string; formData: FormData }) => {
@@ -76,9 +76,9 @@ const userSlice = api.injectEndpoints({
         }),
 
         getHosts: builder.query({
-            query: ({query}:{query?:string}) => {
+            query: ({ query }: { query?: string }) => {
                 return {
-                    url: "/user/host?"+query,
+                    url: "/user/host?" + query,
                 };
             },
         }),
@@ -92,24 +92,34 @@ const userSlice = api.injectEndpoints({
         }),
 
         getUserStatistics: builder.query({
-            query: ({year}:{year?:string}) => {
+            query: ({ year }: { year?: string }) => {
                 return {
-                    url: "/user/statistics?year="+year,
+                    url: "/user/statistics?year=" + year,
                     method: "GET",
                 };
             },
         }),
 
         sendPushNotification: builder.mutation({
-            query: ({usersId = [], message}: {
+            query: ({ usersId = [], message }: {
                 usersId?: string[],
                 message: string
             }) => ({
                 url: '/user/push-notification',
                 method: 'POST',
-                body: {usersId, message}
+                body: { usersId, message }
             })
+        }),
+        getALlPartnerUsers: builder.query({
+            query: ({ query }: { query?: Record<string, any> }) => {
+                return {
+                    url: "/user/all-partner-users",
+                    params: query || {},
+                    method: "GET",
+                };
+            },
+
         }),
     }),
 });
-export const {useGetUsersQuery, useChangeStatusUserMutation,useGetHostsQuery, useGetStatisticsQuery, useGetUserStatisticsQuery, useUpdateUserMutation,useChangePasswordMutation, useUpdateSingleUserMutation , useSendPushNotificationMutation, useUpdatePendingUserProfileMutation } = userSlice;
+export const { useGetUsersQuery, useChangeStatusUserMutation, useGetHostsQuery, useGetStatisticsQuery, useGetUserStatisticsQuery, useUpdateUserMutation, useChangePasswordMutation, useUpdateSingleUserMutation, useSendPushNotificationMutation, useUpdatePendingUserProfileMutation, useGetALlPartnerUsersQuery } = userSlice;
