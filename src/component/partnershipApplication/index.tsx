@@ -11,14 +11,15 @@ import {
   Modal,
 } from "antd";
 import type { TableColumnsType, TablePaginationConfig } from "antd";
-import { FiSearch } from "react-icons/fi";
+import { FiEdit, FiSearch } from "react-icons/fi";
 import { EyeOutlined, DeleteOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
 import { PartnerShipApplicationInfoModel } from "./PartnerShipApplicationInfoModel";
-import { FaRegFileExcel } from "react-icons/fa6";
-import { useDeletepartnerShipApplicationMutation, useGetpartnerShipApplicationsQuery, useUpdatepartnerShipApplicationMutation } from "../../redux/apiSlices/partnershipApplicationSlice";
+import { FaPlus, FaRegFileExcel } from "react-icons/fa6";
+import { useCreatepartnerShipApplicationMutation, useDeletepartnerShipApplicationMutation, useGetpartnerShipApplicationsQuery, useUpdatepartnerShipApplicationMutation } from "../../redux/apiSlices/partnershipApplicationSlice";
 import { handleExportPartnershipToCsv } from "./utils/handleExportToCsv";
+import { PartnerShipApplicationCreate } from "./PartnerShipApplicationCreate";
 const { Text } = Typography;
 
 /* =====================
@@ -120,11 +121,11 @@ const PartnerShipApplication: React.FC = () => {
   const [viewItem, setViewItem] = useState<PartnerShipApplicationType | null>(
     null,
   );
-  // const [editItem, setEditItem] = useState<PartnerShipApplicationType | null>(
-  //   null,
-  // );
+  const [editItem, setEditItem] = useState<PartnerShipApplicationType | null>(
+    null,
+  );
 
-  // const [formOpen, setFormOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
 
   // New state for decision confirmation
   const [decisionModal, setDecisionModal] = useState<{
@@ -147,8 +148,7 @@ const PartnerShipApplication: React.FC = () => {
   const { data, isLoading, refetch } = useGetpartnerShipApplicationsQuery({
     query,
   });
-  // const [createApplication, { isLoading: createLoading }] =
-  //   useCreatepartnerShipApplicationMutation();
+  const [createApplication, { isLoading: createLoading }] = useCreatepartnerShipApplicationMutation();
   const [updateApplication, { isLoading: updateLoading }] =
     useUpdatepartnerShipApplicationMutation();
   const [deleteApplication, { isLoading: deleteLoading }] =
@@ -314,7 +314,7 @@ const PartnerShipApplication: React.FC = () => {
                 <EyeOutlined />
               </Button>
             </Tooltip>
-            {/* <Tooltip title="Edit">
+            <Tooltip title="Edit">
               <Button
                 type="link"
                 style={{ color: "#2A62A6" }}
@@ -325,7 +325,7 @@ const PartnerShipApplication: React.FC = () => {
               >
                 <FiEdit />
               </Button>
-            </Tooltip> */}
+            </Tooltip>
             <Tooltip title="Delete">
               <Popconfirm
                 title="Delete this application?"
@@ -370,7 +370,7 @@ const PartnerShipApplication: React.FC = () => {
         onClose={() => setViewOpen(false)}
       />
 
-      {/* <PartnerShipApplicationCreate
+      <PartnerShipApplicationCreate
         open={formOpen}
         loading={createLoading || updateLoading}
         editApplication={editItem}
@@ -380,19 +380,17 @@ const PartnerShipApplication: React.FC = () => {
         }}
         onAdd={async (values) => {
           await createApplication(values).unwrap();
-          message.success("PartnerShip application added");
           setFormOpen(false);
           refetch();
         }}
         onUpdate={async (id, values) => {
           const { email, ...noEmail } = values;
           await updateApplication({ id, data: noEmail }).unwrap();
-          message.success("PartnerShip application updated");
           setFormOpen(false);
           setEditItem(null);
           refetch();
         }}
-      /> */}
+      />
 
       {/* Decision Confirmation Modal */}
       <Modal
@@ -452,7 +450,7 @@ const PartnerShipApplication: React.FC = () => {
               size="large"
             />
           </div>
-          <div>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <Button
               type="primary"
               size="large"
@@ -460,6 +458,15 @@ const PartnerShipApplication: React.FC = () => {
               onClick={() => handleExportPartnershipToCsv()}
             >
               Export as CSV
+            </Button>
+
+            <Button
+              type="primary"
+              size="large"
+              icon={<FaPlus style={{ fontSize: 18, marginRight: 6 }} />}
+              onClick={() => setFormOpen(true)}
+            >
+              Add New PartnerShip
             </Button>
           </div>
         </div>

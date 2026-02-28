@@ -286,25 +286,6 @@ export const MemberShipApplicationInfoModel: React.FC<{
             </Descriptions>
           </div>
         )}
-
-        {/* {application.familyMembers &&
-          application.familyMembers.length > 0 && (
-            <div style={{ marginTop: 24 }}>
-              <div style={{ fontWeight: 500, fontSize: 16, marginBottom: 8 }}>
-                Family Members:
-              </div>
-              <Descriptions column={1} bordered>
-                {application.familyMembers.map((fm, idx) => (
-                  <Descriptions.Item key={idx} label={`${fm.relation}`}>
-                    {fm.name}{" "}
-                    <span style={{ color: "#888" }}>
-                      {fm.email ? `(${fm.email})` : ""}
-                    </span>
-                  </Descriptions.Item>
-                ))}
-              </Descriptions>
-            </div>
-          )} */}
       </div>
     )}
   </Modal>

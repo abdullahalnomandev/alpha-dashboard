@@ -22,9 +22,9 @@ import {
   useDeleteMembershipApplicationMutation,
 } from "../../redux/apiSlices/membershipApplicationSlice";
 import { MemberShipApplicationInfoModel } from "./MemberShipApplicationInfoModel";
-import { MemberShipApplicationCreate } from "./MemberShipApplicationCreate";
-import { FaRegFileExcel } from "react-icons/fa6";
+import { FaPlus, FaRegFileExcel } from "react-icons/fa6";
 import { handleExportToCsv } from "./utils/handleExportToCsv";
+import { MemberShipApplicationCreate } from "./MemberShipApplicationCreate";
 const { Text } = Typography;
 
 /* =====================
@@ -351,7 +351,7 @@ const MembershipApplication: React.FC = () => {
                 <EyeOutlined />
               </Button>
             </Tooltip>
-            <Tooltip title="Edit">
+            {/* <Tooltip title="Edit">
               <Button
                 type="link"
                 style={{ color: "#2A62A6" }}
@@ -362,7 +362,7 @@ const MembershipApplication: React.FC = () => {
               >
                 <FiEdit />
               </Button>
-            </Tooltip>
+            </Tooltip> */}
             <Tooltip title="Delete">
               <Popconfirm
                 title="Delete this application?"
@@ -492,7 +492,7 @@ const MembershipApplication: React.FC = () => {
               size="large"
             />
           </div>
-          <div>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <Button
               type="primary"
               size="large"
@@ -501,6 +501,14 @@ const MembershipApplication: React.FC = () => {
             >
               Export as CSV
             </Button>
+            {/* <Button
+              type="primary"
+              size="large"
+              icon={<FaPlus style={{ fontSize: 18, marginRight: 6 }} />}
+              onClick={() => setFormOpen(true)}
+            >
+              Add Membership Application
+            </Button> */}
           </div>
         </div>
       </div>

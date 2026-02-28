@@ -2,7 +2,8 @@ import { Form, Modal, Input } from "antd";
 import { useEffect } from "react";
 import type { PartnerShipApplicationType } from ".";
 import { message } from "antd";
-
+import { PhoneInput } from "react-international-phone";
+import "react-international-phone/style.css";
 export const PartnerShipApplicationCreate: React.FC<{
   open: boolean;
   loading: boolean;
@@ -88,28 +89,46 @@ export const PartnerShipApplicationCreate: React.FC<{
           <Input placeholder="Contact Name" />
         </Form.Item>
 
-        <Form.Item
-          label="Contact Email"
-          name="contactEmail"
-          rules={[{ required: true, message: "Please enter contact email" }, { type: "email", message: "Invalid email" }]}
-        >
-          <Input placeholder="Contact Email" />
+        {
+          !editApplication && <>
+            <Form.Item
+              label="Contact Email"
+              name="contactEmail"
+              rules={[{ required: true, message: "Please enter contact email" }, { type: "email", message: "Invalid email" }]}
+            >
+              <Input placeholder="Contact Email" />
+            </Form.Item>
+
+            <Form.Item
+              label="Contact Phone"
+              name="contactPhone"
+              rules={[{ required: true, message: "Please enter contact phone" }]}
+            >
+              {/* <Input placeholder="Contact Phone" /> */}
+              <PhoneInput
+                defaultCountry="ae"
+                placeholder="Enter spouse phone"
+                style={{
+                  width: "100%",
+                  borderRadius: "0.375rem", // equivalent to rounded-md
+                  height: "2.5rem", // 10 * 0.25rem
+                  border: "none",
+                  padding: "0 0.5rem", // optional for inner spacing
+                }}
+              />
+            </Form.Item>
+          </>
+
+        }
+
+
+
+        <Form.Item label="Website" name="website" rules={[{ required: true, type: "url", message: "Please enter website" }]}>
+          <Input placeholder="Website " />
         </Form.Item>
 
-        <Form.Item
-          label="Contact Phone"
-          name="contactPhone"
-          rules={[{ required: true, message: "Please enter contact phone" }]}
-        >
-          <Input placeholder="Contact Phone" />
-        </Form.Item>
-
-        <Form.Item label="Website" name="website">
-          <Input placeholder="Website (optional)" />
-        </Form.Item>
-
-        <Form.Item label="Message" name="message">
-          <Input.TextArea placeholder="Message (optional)" rows={4} />
+        <Form.Item label="Message" name="message" rules={[{ required: true, message: "Please enter message" }]}>
+          <Input.TextArea placeholder="Message" rows={4} />
         </Form.Item>
       </Form>
     </Modal>
