@@ -11,13 +11,13 @@ import {
   Modal,
 } from "antd";
 import type { TableColumnsType, TablePaginationConfig } from "antd";
-import {  FiSearch } from "react-icons/fi";
+import { FiSearch } from "react-icons/fi";
 import { EyeOutlined, DeleteOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
 import { PartnerShipApplicationInfoModel } from "./PartnerShipApplicationInfoModel";
 import { FaRegFileExcel } from "react-icons/fa6";
-import {  useDeletepartnerShipApplicationMutation, useGetpartnerShipApplicationsQuery, useUpdatepartnerShipApplicationMutation } from "../../redux/apiSlices/partnershipApplicationSlice";
+import { useDeletepartnerShipApplicationMutation, useGetpartnerShipApplicationsQuery, useUpdatepartnerShipApplicationMutation } from "../../redux/apiSlices/partnershipApplicationSlice";
 import { handleExportPartnershipToCsv } from "./utils/handleExportToCsv";
 const { Text } = Typography;
 

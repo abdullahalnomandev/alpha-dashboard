@@ -68,6 +68,19 @@ export type MembershipApplicationType = {
   logo: [String]; // array of string
   confirmAcknowledgement: Boolean;
   confirmAgreement: Boolean;
+
+  family?: {
+    spouse?: {
+      name?: string;
+      dob?: Date;
+      email?: string;
+      phone?: string;
+    };
+    children?: {
+      name?: string;
+      age?: number;
+    }[];
+  };
 };
 
 /* Status ENUM */
