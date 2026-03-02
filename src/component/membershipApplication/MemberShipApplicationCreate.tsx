@@ -10,11 +10,9 @@ import {
   Row,
   Col,
   InputNumber,
-  Select,
   Radio,
 } from "antd";
 import { useEffect, useState } from "react";
-import { UploadOutlined } from "@ant-design/icons";
 import type { UploadFile } from "antd/es/upload/interface";
 import dayjs from "dayjs";
 import { PhoneInput } from "react-international-phone";
