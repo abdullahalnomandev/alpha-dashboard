@@ -11,7 +11,7 @@ import {
   Modal,
 } from "antd";
 import type { TableColumnsType, TablePaginationConfig } from "antd";
-import {  FiSearch } from "react-icons/fi";
+import { FiEdit, FiSearch } from "react-icons/fi";
 import { EyeOutlined, DeleteOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
@@ -22,7 +22,7 @@ import {
   useDeleteMembershipApplicationMutation,
 } from "../../redux/apiSlices/membershipApplicationSlice";
 import { MemberShipApplicationInfoModel } from "./MemberShipApplicationInfoModel";
-import {  FaRegFileExcel } from "react-icons/fa6";
+import { FaPlus, FaRegFileExcel } from "react-icons/fa6";
 import { handleExportToCsv } from "./utils/handleExportToCsv";
 import { MemberShipApplicationCreate } from "./MemberShipApplicationCreate";
 const { Text } = Typography;
@@ -351,7 +351,7 @@ const MembershipApplication: React.FC = () => {
                 <EyeOutlined />
               </Button>
             </Tooltip>
-            {/* <Tooltip title="Edit">
+            <Tooltip title="Edit">
               <Button
                 type="link"
                 style={{ color: "#2A62A6" }}
@@ -362,7 +362,7 @@ const MembershipApplication: React.FC = () => {
               >
                 <FiEdit />
               </Button>
-            </Tooltip> */}
+            </Tooltip>
             <Tooltip title="Delete">
               <Popconfirm
                 title="Delete this application?"
@@ -501,14 +501,14 @@ const MembershipApplication: React.FC = () => {
             >
               Export as CSV
             </Button>
-            {/* <Button
+            <Button
               type="primary"
               size="large"
               icon={<FaPlus style={{ fontSize: 18, marginRight: 6 }} />}
               onClick={() => setFormOpen(true)}
             >
               Add Membership Application
-            </Button> */}
+            </Button>
           </div>
         </div>
       </div>

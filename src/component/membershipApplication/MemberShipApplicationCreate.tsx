@@ -1,313 +1,3 @@
-// import { Form, Modal, DatePicker, Input, Select } from "antd";
-// import { useEffect, useState, useMemo, useCallback } from "react";
-// import type { MembershipApplicationType, FamilyMember } from ".";
-// import dayjs from "dayjs";
-// import { useGetMembershipPlansQuery } from "../../redux/apiSlices/membershipPlanSlice";
-// import { imageUrl } from "../../redux/api/baseApi";
-
-// const { Option } = Select;
-
-
-// function formatType(val: string) {
-//   if (!val) return "";
-//   return val
-//     .replace(/_/g, " ")
-//     .replace(/-/g, " ")
-//     .replace(/(^\w|\s\w)/g, m => m.toUpperCase());
-// }
-
-// export const MemberShipApplicationCreate: React.FC<{
-//   open: boolean;
-//   loading: boolean;
-//   editApplication: MembershipApplicationType | null;
-//   onClose: () => void;
-//   onAdd: (values: any) => Promise<void>;
-//   onUpdate: (id: string, values: any) => Promise<void>;
-// }> = ({
-//   open,
-//   loading,
-//   editApplication,
-//   onClose,
-//   onAdd,
-//   onUpdate,
-// }) => {
-//     const [form] = Form.useForm();
-//     const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
-//     const [selectedMembershipType, setSelectedMembershipType] = useState<string | undefined>(undefined);
-//     const [familyMembersEnabled, setFamilyMembersEnabled] = useState<boolean>(false);
-//     const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
-//     const [profilePreview, setProfilePreview] = useState<string | null>(null);
-//     const { data: membershipPlansResponse } = useGetMembershipPlansQuery({});
-
-//     // Build membership type options from API data
-//     const membershipTypeOptions = useMemo(() => {
-//       if (membershipPlansResponse && Array.isArray(membershipPlansResponse.data)) {
-//         return membershipPlansResponse.data.map((plan: any) => ({
-//           value: plan.membershipType,
-//           label: formatType(plan.membershipType)
-//         }));
-//       }
-//       return [];
-//     }, [membershipPlansResponse]);
-
-//     const checkFamilyEnabled = useCallback((membershipTypeValue?: string) => {
-//       if (!membershipPlansResponse || !membershipPlansResponse.data) return false;
-//       const plans = membershipPlansResponse.data as any[];
-//       const found = plans.find(plan => plan.membershipType === membershipTypeValue);
-//       return !!(
-//         found &&
-//         found.familyMembershipOptions &&
-//         found.familyMembershipOptions.enableFamilyMembers
-//       );
-//     }, [membershipPlansResponse]);
-
-//     useEffect(() => {
-//       let newSelectedType: string | undefined;
-//       if (editApplication) {
-//         form.setFieldsValue({
-//           // address intentionally omitted based on instruction
-//           membershipType: editApplication.membershipType,
-//           expireId: editApplication.expireId ? dayjs(editApplication.expireId) : null,
-//           from: editApplication.from,
-//         });
-
-//         if (editApplication?.profileImage) {
-//           setProfilePreview(imageUrl + editApplication.profileImage);
-//         } else {
-//           setProfilePreview(null);
-//         }
-//         setProfileImageFile(null);
-//         setFamilyMembers(editApplication.familyMembers || []);
-//         newSelectedType = editApplication.membershipType;
-//       } else {
-//         form.resetFields();
-//         setFamilyMembers([]);
-//         if (membershipTypeOptions.length > 0) {
-//           newSelectedType = membershipTypeOptions[0].value;
-//           form.setFieldsValue({
-//             membershipType: newSelectedType,
-//           });
-//         }
-//       }
-//       setSelectedMembershipType(newSelectedType);
-//       // eslint-disable-next-line
-//     }, [editApplication, form, membershipTypeOptions]);
-
-//     useEffect(() => {
-//       setFamilyMembersEnabled(
-//         checkFamilyEnabled(selectedMembershipType)
-//       );
-//     }, [selectedMembershipType, checkFamilyEnabled]);
-
-//     const handleMembershipTypeChange = (value: string) => {
-//       setSelectedMembershipType(value);
-//       // Reset family members if family membership disables
-//       if (!checkFamilyEnabled(value)) {
-//         setFamilyMembers([]);
-//       }
-//       form.setFieldsValue({ membershipType: value });
-//     };
-
-
-//     const handleSubmit = async () => {
-//       const values = await form.validateFields();
-
-//       if (values.expireId) {
-//         values.expireId = values.expireId.toISOString();
-//       }
-
-//       values.familyMembers = familyMembersEnabled
-//         ? familyMembers.filter(fm => fm.name && fm.relation)
-//         : [];
-
-//       // Remove fields you don't want to send
-//       delete values.memberShipId;
-//       delete values.membershipStatus;
-//       delete values.address; // if you don't want to update address
-
-//       // --- CREATE FORM DATA ---
-//       const formData = new FormData();
-//       for (const key in values) {
-//         const val = (values as any)[key];
-//         if (Array.isArray(val)) {
-//           // For arrays, append each value individually
-//           val.forEach((v: any) => {
-//             formData.append(`${key}[]`, typeof v === "object" ? JSON.stringify(v) : v);
-//           });
-//         } else if (val instanceof File) {
-//           formData.append(key, val); // File goes directly
-//         } else if (typeof val === "object" && val !== null) {
-//           formData.append(key, JSON.stringify(val)); // Objects stringify
-//         } else if (val !== undefined && val !== null) {
-//           formData.append(key, val);
-//         }
-//       }
-
-//       // Append profile image
-//       if (profileImageFile) {
-//         formData.append("profileImage", profileImageFile);
-//       }
-
-//       if (editApplication) {
-//         await onUpdate(editApplication._id, formData);
-//       } else {
-//         await onAdd(formData);
-//       }
-
-//       form.resetFields();
-//       setFamilyMembers([]);
-//     };
-
-//     return (
-//       <>
-//         <Modal
-//           open={open}
-//           title={editApplication ? "Edit Membership Application" : "Add Membership Application"}
-//           onCancel={onClose}
-//           onOk={handleSubmit}
-//           confirmLoading={loading}
-//           okText={editApplication ? "Update" : "Create"}
-//           width={600}
-//           destroyOnClose
-//         >
-//           {/* --- Main Form fields --- */}
-//           <Form form={form} layout="vertical">
-//             <Form.Item label="Profile Image">
-//               <div style={{ textAlign: "center" }}>
-//                 {profilePreview && (
-//                   <div
-//                     style={{
-//                       width: 90,
-//                       height: 90,
-//                       borderRadius: "50%",
-//                       overflow: "hidden",
-//                       margin: "0 auto 12px auto",
-//                     }}
-//                   >
-//                     <img
-//                       src={profilePreview}
-//                       alt="Profile Preview"
-//                       style={{
-//                         width: "100%",
-//                         height: "100%",
-//                         objectFit: "cover",
-//                       }}
-//                     />
-//                   </div>
-//                 )}
-
-//                 <input
-//                   type="file"
-//                   accept="image/*"
-//                   onChange={(e) => {
-//                     const file = e.target.files?.[0];
-//                     if (file) {
-//                       setProfileImageFile(file);
-//                       setProfilePreview(URL.createObjectURL(file)); // preview
-//                     }
-//                   }}
-//                 />
-//               </div>
-//             </Form.Item>
-//             {/* Membership ID and Status removed */}
-//             <Form.Item
-//               label="Membership Type"
-//               name="membershipType"
-//               rules={[{ required: true, message: "Please select membership type" }]}
-//             >
-//               <Select
-//                 placeholder="Select membership type"
-//                 loading={!membershipTypeOptions.length}
-//                 onChange={handleMembershipTypeChange}
-//                 value={selectedMembershipType}
-//               >
-//                 {membershipTypeOptions.map((option: { value: string }) => (
-//                   <Option key={option.value} value={option.value}>
-//                     {formatType(option.value)}
-//                   </Option>
-//                 ))}
-//               </Select>
-//             </Form.Item>
-//             {/* Name field removed as per instruction */}
-//             {/* Address field is now omitted from the form for update */}
-//             {!editApplication && (
-//               <Form.Item
-//                 label="Address"
-//                 name="address"
-//               >
-//                 <Input placeholder="Address" />
-//               </Form.Item>
-//             )}
-//             <Form.Item
-//               label="Expiry Date"
-//               name="expireId"
-//               rules={[{ required: true, message: "Please select expiry date" }]}
-//             >
-//               <DatePicker
-//                 style={{ width: "100%" }}
-//                 showTime={false}
-//                 format="YYYY-MM-DD"
-//                 disabledDate={current => current && current < dayjs().startOf('day')}
-//                 placeholder="Select expiry date"
-//               />
-//             </Form.Item>
-
-//           </Form>
-//         </Modal>
-//       </>
-//     );
-//   };
-
-
-
-
-
-//       // {/* Family Members */}
-//       //       {familyMembersEnabled && (
-//       //         <div style={{ marginTop: 20 }}>
-//       //           <div style={{ marginBottom: 8, fontWeight: 500 }}>Family Members (optional):</div>
-//       //           {familyMembers.map((fm, idx) => (
-//       //             <Space align="start" style={{ display: "flex", marginBottom: 8 }} key={idx}>
-//       //               <Input
-//       //                 placeholder="Name"
-//       //                 value={fm.name}
-//       //                 style={{ minWidth: 120 }}
-//       //                 onChange={e => updateFamilyMember(idx, "name", e.target.value)}
-//       //               />
-//       //               <Input
-//       //                 placeholder="Email"
-//       //                 value={fm.email}
-//       //                 style={{ minWidth: 150 }}
-//       //                 onChange={e => updateFamilyMember(idx, "email", e.target.value)}
-//       //               />
-//       //               <Select
-//       //                 placeholder="Relation"
-//       //                 value={fm.relation}
-//       //                 style={{ minWidth: 120 }}
-//       //                 onChange={value => updateFamilyMember(idx, "relation", value)}
-//       //               >
-//       //                 {FAMILY_RELATION_OPTIONS.map(option => (
-//       //                   <Option key={option.value} value={option.value}>
-//       //                     {option.label}
-//       //                   </Option>
-//       //                 ))}
-//       //               </Select>
-//       //               <Button danger type="link" onClick={() => removeFamilyMember(idx)} style={{ color: "#f5222d" }}>
-//       //                 Remove
-//       //               </Button>
-//       //             </Space>
-//       //           ))}
-//       //           <Button
-//       //             type="dashed"
-//       //             style={{ marginTop: 6 }}
-//       //             onClick={addFamilyMember}
-//       //             block
-//       //           >
-//       //             + Add Family Member
-//       //           </Button>
-//       //         </div>
-//       //       )}
-"use client";
 
 import {
   Modal,
@@ -321,6 +11,7 @@ import {
   Col,
   InputNumber,
   Select,
+  Radio,
 } from "antd";
 import { useEffect, useState } from "react";
 import { UploadOutlined } from "@ant-design/icons";
@@ -328,6 +19,8 @@ import type { UploadFile } from "antd/es/upload/interface";
 import dayjs from "dayjs";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
+import { BsUpload } from "react-icons/bs";
+import { useGetMembershipPlansQuery } from "../../redux/apiSlices/membershipPlanSlice";
 
 interface Props {
   open: boolean;
@@ -337,6 +30,15 @@ interface Props {
   onAdd: (values: FormData) => Promise<void>;
   onUpdate: (id: string, values: FormData) => Promise<void>;
 }
+const benefitsInterests = [
+  { value: "networking", label: "Social Networking Events" },
+  { value: "sports", label: "Sports & Fitness" },
+  { value: "family", label: "Family & Leisure Activities" },
+  { value: "travel", label: "Travel & Hospitality" },
+  { value: "automotive", label: "Automotive & Motorsport" },
+  { value: "lifestyle", label: "Lifestyle & Wellness" },
+];
+
 
 export const MemberShipApplicationCreate: React.FC<Props> = ({
   open,
@@ -353,6 +55,11 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
   const [passportFiles, setPassportFiles] = useState<UploadFile[]>([]);
   const [phone, setPhone] = useState("");
   const [spousePhone, setSpousePhone] = useState("");
+
+  // File uploads with preview
+  const [profileImageFile, setProfileImageFile] = useState<UploadFile[]>([]);
+  const [profilePreview, setProfilePreview] = useState<string | null>(null);
+  const { data: membershipData } = useGetMembershipPlansQuery({});
 
   /* ---------------- Prefill Edit ---------------- */
   useEffect(() => {
@@ -430,6 +137,28 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
     form.resetFields();
   };
 
+  const selectedMembershipType = Form.useWatch("membershipType", form);
+
+  const selectedPlan = membershipData?.data?.find((plan: any) => plan.membershipType === selectedMembershipType);
+  const isFamilyEnabled = (selectedPlan as any)?.familyMembershipOptions?.enableFamilyMembers === true;
+  // Map membership data for Radio
+  const organizeTypes = membershipData?.data?.map((type: any) => ({
+    value: type._id,
+    label: type.title,
+    membershipType: type.membershipType,
+  }));
+
+
+  const handleProfileUpload = (file: UploadFile) => {
+    setProfileImageFile([file]);
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file as any);
+    reader.onload = () => setProfilePreview(reader.result as string);
+
+    return false;
+  };
+
   return (
     <Modal
       open={open}
@@ -446,17 +175,97 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
     >
       <Form form={form} layout="vertical">
 
+
+
         {/* Profile Image */}
-        <Form.Item label="Profile Image">
-          <Upload beforeUpload={(file) => {
-            setProfileFile([file]);
-            return false;
-          }}>
-            <Button icon={<UploadOutlined />}>Upload</Button>
-          </Upload>
-        </Form.Item>
+        <Row gutter={16}>
+          <Col xs={24} md={12}>
+            <Form.Item
+              label="Profile Image"
+              name="profileImage"
+              rules={[{ required: true, message: "Profile Image is required" }]}
+            >
+              <Upload
+                beforeUpload={handleProfileUpload}
+                fileList={profileImageFile}
+                onRemove={() => {
+                  setProfileImageFile([]);
+                  setProfilePreview(null);
+                }}
+                maxCount={1}
+                accept="image/*"
+                showUploadList={false} // hides default upload list
+                style={{
+                  position: "relative",
+                  width: 128,
+                  height: 128,
+                  margin: "0 auto",
+                  borderRadius: "50%",
+                  border: "2px solid #D1D5DB", // gray-300
+                  backgroundColor: "#F1F1F1",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                  cursor: "pointer",
+                  transition: "all 0.3s",
+                }}
+              >
+                {profilePreview ? (
+                  <div
+                    style={{
+                      position: "relative",
+                      width: "100%",
+                      height: "100%",
+                      borderRadius: "50%",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <img
+                      src={profilePreview}
+                      alt="Profile Preview"
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        backgroundColor: "rgba(0,0,0,0.25)",
+                        opacity: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        transition: "opacity 0.3s",
+                      }}
+                      className="hover-opacity"
+                    >
+                      <p style={{ color: "#fff", fontSize: 12 }}>Change</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      textAlign: "center",
+                      color: "#9CA3AF", // gray-400
+                      padding: "0 16px",
+                    }}
+                  >
+                    <BsUpload style={{ fontSize: 20, marginBottom: 8 }} />
+                    <p style={{ fontSize: 14, fontWeight: 500 }}>Upload Profile Image</p>
+                  </div>
+                )}
+              </Upload>
+            </Form.Item>
+          </Col>
+        </Row>
 
         {/* Primary Info */}
+        <h3>Primary Member Information</h3>
+
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item name="name" label="Name" rules={[{ required: true }]}>
@@ -466,14 +275,14 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
 
 
           <Col span={12}>
-            <Form.Item name="jobTitle" label="Job Title">
+            <Form.Item name="jobTitle" label="Job Title" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
           </Col>
 
 
           <Col span={12}>
-            <Form.Item name="organizationName" label="Organization">
+            <Form.Item name="organizationName" label="Organization" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
           </Col>
@@ -485,32 +294,34 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
           </Col>
 
           <Col span={12}>
-            <Form.Item label="Phone" required>
-              <PhoneInput value={phone} onChange={setPhone} country="ae" />
+            <Form.Item label="Phone" rules={[{ required: true }]}>
+              <PhoneInput value={phone} onChange={setPhone} defaultCountry="ae" placeholder="Enter phone"
+
+              />
             </Form.Item>
           </Col>
 
 
           <Col span={12}>
-            <Form.Item name="dateOfBirth" label="Date of Birth">
+            <Form.Item name="dateOfBirth" label="Date of Birth" rules={[{ required: true }]}>
               <DatePicker style={{ width: '100%' }} />
             </Form.Item>
           </Col>
 
           <Col span={12}>
-            <Form.Item name="nationality" label="Nationality">
+            <Form.Item name="nationality" label="Nationality" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
           </Col>
 
           <Col span={12}>
-            <Form.Item name="countryOfResidence" label="Country of Residence">
+            <Form.Item name="countryOfResidence" label="Country of Residence" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
           </Col>
 
           <Col span={24}>
-            <Form.Item name="residenceAddress" label="Residence Address" style={{ width: "100%" }}>
+            <Form.Item name="residenceAddress" label="Residence Address" style={{ width: "100%" }} rules={[{ required: true }]}>
               <Input.TextArea rows={2} />
             </Form.Item>
           </Col>
@@ -520,140 +331,281 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
         {/* Professional */}
         <Row gutter={16}>
           <Col span={12}>
-            <Form.Item name="industrySector" label="Industry Sector">
+            <Form.Item name="industrySector" label="Industry Sector" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
           </Col>
 
           <Col span={12}>
-            <Form.Item name="yearsOfExperience" label="Years of Experience">
-              <InputNumber className="w-full"  style={{width:'100%'}} />
+            <Form.Item name="yearsOfExperience" label="Years of Experience" rules={[{ required: true }]}>
+              <InputNumber className="w-full" style={{ width: '100%' }} />
             </Form.Item>
           </Col>
 
           <Col span={12}>
-            <Form.Item name="currentEmployer" label="Current Employer">
+            <Form.Item name="currentEmployer" label="Current Employer" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
           </Col>
 
           <Col span={12}>
-            <Form.Item name="workLocation" label="Work Location">
+            <Form.Item name="workLocation" label="Work Location" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
           </Col>
 
           <Col span={24}>
-            <Form.Item name="annualGrossSalary" label="Annual Gross Salary">
-              <InputNumber style={{width:'100%'}} />
+            <Form.Item name="annualGrossSalary" label="Annual Gross Salary" rules={[{ required: true }]}>
+              <InputNumber style={{ width: '100%' }} />
             </Form.Item>
           </Col>
         </Row>
 
-        <Form.Item
-          name="membershipType"
-          label="Membership Type"
-          rules={[{ required: true }]}
-        >
-          <Select>
-            <Select.Option value="individual">Individual</Select.Option>
-            <Select.Option value="family">Family</Select.Option>
-          </Select>
+        <h3>Membership Type</h3>
+        <Form.Item name="membershipType" rules={[{ required: true }]}>
+          <Radio.Group className="flex flex-col gap-3" >
+            {organizeTypes?.map((t: any) => (
+              <Radio key={t.value} value={t.membershipType}>
+                {t.label}
+              </Radio>
+            ))}
+          </Radio.Group>
         </Form.Item>
 
+        {/* Family Details */}
+        {isFamilyEnabled && (
+          <div className="pt-6">
+            <h3 className="font-semibold mb-3">Family Details</h3>
+
+            {/* Spouse */}
+            <Form.Item
+              name={["family", "spouse", "name"]}
+              label="Spouse Name"
+              rules={[{ required: true }]}
+            >
+              <Input placeholder="Enter spouse name" />
+            </Form.Item>
+
+            <Form.Item
+              name={["family", "spouse", "dob"]}
+              label="Date of Birth"
+              rules={[{ required: true }]}
+            >
+              <DatePicker className="w-full" />
+            </Form.Item>
+
+            <Form.Item
+              name={["family", "spouse", "email"]}
+              label="Email"
+              rules={[{ type: "email", required: true }]}
+            >
+              <Input placeholder="Enter spouse email" />
+            </Form.Item>
+
+            <Form.Item
+              name={["family", "spouse", "phone"]}
+              label="Phone"
+              rules={[{ required: true, message: "Spouse phone is required" }]}
+            >
+              <PhoneInput
+                defaultCountry="ae"
+                inputClassName="w-full rounded-md bg-[#F1F1F1] !h-10 border-none"
+                placeholder="Enter spouse phone"
+              />
+            </Form.Item>
+
+            {/* Children */}
+            <h3 className="font-semibold mt-6 mb-3">Children</h3>
+
+            <Form.List name={["family", "children"]}>
+              {(fields, { add, remove }) => (
+                <>
+                  {fields.map((field, index) => (
+                    <div
+                      key={field.key}
+                      className="border border-gray-200! p-4 rounded-md mb-4"
+                    >
+                      <h4 className="mb-3 font-medium">
+                        Child {index + 1}
+                      </h4>
+
+                      {/* Name + Age same row */}
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <Form.Item
+                          {...field}
+                          name={[field.name, "name"]}
+                          label="Name"
+                          rules={[{ required: true }]}
+                          className="flex-1"
+                        >
+                          <Input placeholder="Enter child name" />
+                        </Form.Item>
+
+                        <Form.Item
+                          {...field}
+                          name={[field.name, "age"]}
+                          label="Age"
+                          rules={[
+                            { required: true },
+                            {
+                              validator: (_, value) =>
+                                value && value > 18
+                                  ? Promise.reject(
+                                    new Error("Child age must be 18 or below")
+                                  )
+                                  : Promise.resolve(),
+                            },
+                          ]}
+                          className="w-full sm:w-40"
+                        >
+                          <InputNumber
+                            min={0}
+                            max={18}
+                            className="w-full"
+                          />
+                        </Form.Item>
+                      </div>
+
+                      {fields.length > 0 && (
+                        <Button
+                          danger
+                          type="link"
+                          onClick={() => remove(field.name)}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+
+                  {fields.length < 2 && (
+                    <Button
+                      type="dashed"
+                      onClick={() => add()}
+                      block
+                    >
+                      Add Child
+                    </Button>
+                  )}
+                </>
+              )}
+            </Form.List>
+          </div>
+        )}
+
         {/* Expire Date */}
-        <Form.Item name="expireId" label="Expire Date">
-          <DatePicker className="w-full" />
-        </Form.Item>
+        {
+          editApplication && <Form.Item name="expireId" label="Expire Date">
+            <DatePicker className="w-full" />
+          </Form.Item>
+        }
 
 
 
 
         {/* Benefits */}
+        <h3>Benefits & Lifestyle Interests</h3>
         <Form.Item
           name="benefitsAndLifestyleInterests"
-          label="Benefits & Interests"
         >
           <Checkbox.Group
-            options={[
-              "networking",
-              "sports",
-              "family",
-              "travel",
-              "automotive",
-              "lifestyle",
-            ]}
+            options={benefitsInterests}
           />
         </Form.Item>
 
-        {/* Family */}
-        <Form.List name={["family", "children"]}>
-          {(fields, { add, remove }) => (
-            <>
-              {fields.map((field, index) => (
-                <div key={field.key}>
-                  <Form.Item
-                    {...field}
-                    name={[field.name, "name"]}
-                    label={`Child ${index + 1} Name`}
-                  >
-                    <Input />
-                  </Form.Item>
-
-                  <Form.Item
-                    {...field}
-                    name={[field.name, "age"]}
-                    label="Age"
-                  >
-                    <InputNumber min={0} max={18} />
-                  </Form.Item>
-
-                  <Button danger onClick={() => remove(field.name)}>
-                    Remove
-                  </Button>
-                </div>
-              ))}
-              <Button type="dashed" onClick={() => add()}>
-                Add Child
-              </Button>
-            </>
-          )}
-        </Form.List>
 
         {/* Documents */}
-        <Form.Item label="Emirates ID">
-          <Upload.Dragger
-            multiple
-            beforeUpload={(file) => {
-              setEmiratesFiles((prev) => [...prev, file]);
-              return false;
-            }}
-          >
-            Upload Emirates ID
-          </Upload.Dragger>
-        </Form.Item>
+        <div className="pt-6">
+          <h3>Required Documentation</h3>
+          <Row gutter={[16, 16]}>
+            {/* Emirates ID */}
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="Emirates ID"
+                name="image"
+                rules={[
+                  { required: true, message: "Emirates ID is required" },
+                ]}
+                className="w-full"
+              >
+                <Upload.Dragger
+                  multiple
+                  className="py-16 md:py-20"
+                  // beforeUpload={(file) => handleUpload(file, setEmiratesIdFile)}
+                  // fileList={emiratesIdFile}
+                  // onRemove={(file) => setEmiratesIdFile(prev => prev.filter(f => f.uid !== file.uid))}
+                  maxCount={2} // or whatever max you want
+                >
+                  <div className="flex flex-col items-center justify-center gap-2 h-full">
+                    <BsUpload className="text-3xl text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground mb-0 text-center">
+                      Emirates ID (Front & Back)
+                    </p>
+                    <p className="text-xs text-amber">
+                      Click or drag to upload
+                    </p>
+                  </div>
+                </Upload.Dragger>
+              </Form.Item>
+            </Col>
 
-        <Form.Item label="Passport">
-          <Upload.Dragger
-            multiple
-            beforeUpload={(file) => {
-              setPassportFiles((prev) => [...prev, file]);
-              return false;
-            }}
-          >
-            Upload Passport
-          </Upload.Dragger>
-        </Form.Item>
+            {/* Passport */}
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="Passport"
+                name="logo"
+                rules={[{ required: true, message: "Passport is required" }]}
+                className="w-full"
+              >
+                <Upload.Dragger
+                  multiple
+                  className="py-16 md:py-20"
+                  // beforeUpload={(file) => handleUpload(file, setPassportFile)}
+                  // fileList={passportFile}
+                  // onRemove={(file) => setPassportFile(prev => prev.filter(f => f.uid !== file.uid))}
+                  maxCount={2} // or whatever max you want
+                >
+                  <div className="flex flex-col items-center justify-center gap-2 h-full">
+                    <BsUpload className="text-3xl text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground mb-0 text-center">
+                      Passport Photo (Primary Member)
+                    </p>
+                    <p className="text-xs text-amber">
+                      Click or drag to upload
+                    </p>
+                  </div>
+                </Upload.Dragger>
+              </Form.Item>
+            </Col>
+          </Row>
+        </div>
+
 
         {/* Agreement */}
-        <Form.Item name="confirmAcknowledgement" valuePropName="checked">
-          <Checkbox>Confirm Information</Checkbox>
-        </Form.Item>
+        <h3>Membership Acknowledgment</h3>
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+          <Form.Item
+            name="confirmAcknowledgement"
+            valuePropName="checked"
+            rules={[{ required: true, message: "Please confirm accuracy" }]}
+            className="mb-2"
+          >
+            <Checkbox className="text-sm">
+              I confirm that the information provided is accurate and complete
+            </Checkbox>
+          </Form.Item>
+          <Form.Item
+            name="confirmAgreement"
+            valuePropName="checked"
+            rules={[{ required: true, message: "Please agree to the terms" }]}
+            className="mb-0"
+          >
+            <Checkbox className="text-sm">
+              I have read & agree to the ALPHA Membership terms & condition
+            </Checkbox>
+          </Form.Item>
 
-        <Form.Item name="confirmAgreement" valuePropName="checked">
-          <Checkbox>Agree to Terms</Checkbox>
-        </Form.Item>
-
+        </div>
       </Form>
     </Modal>
   );

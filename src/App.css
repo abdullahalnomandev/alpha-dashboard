@@ -42,3 +42,9 @@
 }
 
 
+ .react-international-phone-input-container .react-international-phone-input{
+  height: 32px !important;
+}
+ .react-international-phone-country-selector-button{
+  height: 32px !important;
+}
