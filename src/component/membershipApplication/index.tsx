@@ -417,20 +417,34 @@ const MembershipApplication: React.FC = () => {
           setEditItem(null);
         }}
         onAdd={async (formData: FormData) => {
-          await createApplication(formData).unwrap();
-          message.success("Membership application added");
-          setFormOpen(false);
-          refetch();
+          try {
+            await createApplication(formData).unwrap();
+            message.success("Membership application added");
+            setFormOpen(false); 
+            refetch();
+            setEditItem(null);
+
+          } catch (error: any) {
+            // Show a friendly error message
+            message.error(error?.data?.message || "Failed to add membership application");
+          }
         }}
         onUpdate={async (id: string, formData: FormData) => {
-          await updateApplication({
-            id,
-            data: formData,
-          }).unwrap();
-          message.success("Membership application updated");
-          setFormOpen(false);
-          setEditItem(null);
-          refetch();
+          try {
+            await updateApplication({
+              id,
+              data: formData,
+            }).unwrap();
+
+            message.success("Membership application updated");
+            setFormOpen(false);
+            setEditItem(null);
+            refetch();
+          } catch (error: any) {
+            message.error(
+              error?.data?.message || "Failed to update membership application"
+            );
+          }
         }}
       />
 

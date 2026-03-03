@@ -24,7 +24,7 @@ const membershipApplicationSlice = api.injectEndpoints({
         // Create a new membership application
         createMembershipApplication: builder.mutation({
             query: (formData: FormData) => ({
-                url: LS_API,
+                url: `${LS_API}/crate-from`,
                 method: "POST",
                 body: formData,
             }),

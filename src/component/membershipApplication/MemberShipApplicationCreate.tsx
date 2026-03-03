@@ -49,16 +49,17 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
   const [form] = Form.useForm();
 
   const [profileFile, setProfileFile] = useState<UploadFile[]>([]);
-  const [emiratesFiles, setEmiratesFiles] = useState<UploadFile[]>([]);
-  const [passportFiles, setPassportFiles] = useState<UploadFile[]>([]);
+  const [emiratesIdFile, setEmiratesIdFile] = useState<UploadFile[]>([]);
+  const [passportFile, setPassportFile] = useState<UploadFile[]>([]);
   const [phone, setPhone] = useState("");
-  const [spousePhone, setSpousePhone] = useState("");
+  // const [spousePhone, setSpousePhone] = useState("");
 
   // File uploads with preview
   const [profileImageFile, setProfileImageFile] = useState<UploadFile[]>([]);
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
   const { data: membershipData } = useGetMembershipPlansQuery({});
 
+  console.log('profileImageFile', profileImageFile)
   /* ---------------- Prefill Edit ---------------- */
   useEffect(() => {
     if (editApplication) {
@@ -73,14 +74,14 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
       });
 
       setPhone(editApplication.phone || "");
-      setSpousePhone(editApplication?.family?.spouse?.phone || "");
-    } else {
+      //   setSpousePhone(editApplication?.family?.spouse?.phone || "");
+      // } else {
       form.resetFields();
       setPhone("");
-      setSpousePhone("");
+      // setSpousePhone("");
       setProfileFile([]);
-      setEmiratesFiles([]);
-      setPassportFiles([]);
+      setEmiratesIdFile([]);
+      setPassportFile([]);
     }
   }, [editApplication]);
 
@@ -88,51 +89,80 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
   const handleSubmit = async () => {
     const values = await form.validateFields();
     const formData = new FormData();
-
-    Object.keys(values).forEach((key) => {
-      if (!["family", "benefitsAndLifestyleInterests"].includes(key)) {
-        const val = values[key];
-
-        if (dayjs.isDayjs(val)) {
-          formData.append(key, val.toISOString());
-        } else if (val !== undefined && val !== null) {
-          formData.append(key, val);
-        }
-      }
-    });
-
+    formData.append("membershipType", values.membershipType);
+    formData.append("name", values.name);
+    formData.append("email", values.email);
     formData.append("phone", phone);
 
+    formData.append("jobTitle", values.jobTitle);
+    formData.append("organizationName", values.organizationName);
+    formData.append("dateOfBirth", values.dateOfBirth?.toISOString());
+    formData.append("nationality", values.nationality);
+    formData.append("countryOfResidence", values.countryOfResidence);
+    formData.append("residenceAddress", values.residenceAddress);
+    formData.append("industrySector", values.industrySector);
+    formData.append("yearsOfExperience", values.yearsOfExperience);
+    formData.append("currentEmployer", values.currentEmployer);
+    formData.append("workLocation", values.workLocation);
+    formData.append("annualGrossSalary", values.annualGrossSalary);
     // Benefits
     values.benefitsAndLifestyleInterests?.forEach((item: string) =>
       formData.append("benefitsAndLifestyleInterests", item)
     );
 
     // Family
+    // if (values.family) {
+    //   formData.append("family", JSON.stringify(values.family));
+    //   formData.append("spousePhone", spousePhone);
+    // }
+    formData.append("confirmAcknowledgement", values.confirmAcknowledgement ? "true" : "false");
+    formData.append("confirmAgreement", values.confirmAgreement ? "true" : "false");
     if (values.family) {
-      formData.append("family", JSON.stringify(values.family));
-      formData.append("spousePhone", spousePhone);
+      if (values.family.spouse) {
+        formData.append("spouseName", values.family.spouse.name);
+        formData.append(
+          "spouseDob",
+          values.family.spouse.dob?.toISOString()
+        );
+        formData.append("spouseEmail", values.family.spouse.email);
+        formData.append("spousePhone", values.family.spouse.phone);
+      }
+
+      if (values.family.children?.length > 0) {
+        values.family.children.forEach((child: any, index: number) => {
+          formData.append(`children[${index}][name]`, child.name);
+          formData.append(`children[${index}][age]`, child.age);
+        });
+      }
     }
 
     // Files
-    if (profileFile[0])
-      formData.append("profileImage", profileFile[0] as any);
+    if (profileImageFile[0])
+      formData.append("profileImage", profileImageFile[0] as any);
 
-    emiratesFiles.forEach((file) =>
-      formData.append("image", file as any)
-    );
+    emiratesIdFile.forEach(file => formData.append("image", file as any));
+    passportFile.forEach(file => formData.append("logo", file as any));
 
-    passportFiles.forEach((file) =>
-      formData.append("logo", file as any)
-    );
 
-    if (editApplication) {
-      await onUpdate(editApplication._id, formData);
-    } else {
-      await onAdd(formData);
+
+    try {
+      if (editApplication) {
+        await onUpdate(editApplication._id, formData);
+        form.resetFields();
+        setPhone("");
+        setProfileImageFile([]);
+        setEmiratesIdFile([]);
+        setPassportFile([]);
+        setProfilePreview(null);
+
+      } else {
+        await onAdd(formData);
+
+      }
+    } catch (error) {
+
     }
 
-    form.resetFields();
   };
 
   const selectedMembershipType = Form.useWatch("membershipType", form);
@@ -157,6 +187,13 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
     return false;
   };
 
+  const handleUpload = (
+    file: UploadFile,
+    setFile: React.Dispatch<React.SetStateAction<UploadFile[]>>
+  ) => {
+    setFile((prev) => [...prev, file]); // append instead of replace
+    return false; // prevent auto upload
+  };
   return (
     <Modal
       open={open}
@@ -192,75 +229,87 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
                 }}
                 maxCount={1}
                 accept="image/*"
-                showUploadList={false} // hides default upload list
-                style={{
-                  position: "relative",
-                  width: 128,
-                  height: 128,
-                  margin: "0 auto",
-                  borderRadius: "50%",
-                  border: "2px solid #D1D5DB", // gray-300
-                  backgroundColor: "#F1F1F1",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  overflow: "hidden",
-                  cursor: "pointer",
-                  transition: "all 0.3s",
-                }}
+                showUploadList={false}
               >
-                {profilePreview ? (
-                  <div
-                    style={{
-                      position: "relative",
-                      width: "100%",
-                      height: "100%",
-                      borderRadius: "50%",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <img
-                      src={profilePreview}
-                      alt="Profile Preview"
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
+                <div
+                  style={{
+                    width: 128,
+                    height: 128,
+                    margin: "0 auto",
+                    borderRadius: "50%",
+                    border: "2px solid #D1D5DB",
+                    backgroundColor: "#F9FAFB",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    overflow: "hidden",
+                    transition: "all 0.3s ease",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                    position: "relative",
+                  }}
+                >
+                  {profilePreview ? (
                     <div
                       style={{
-                        position: "absolute",
-                        inset: 0,
-                        backgroundColor: "rgba(0,0,0,0.25)",
-                        opacity: 0,
+                        position: "relative",
+                        width: "100%",
+                        height: "100%",
+                        borderRadius: "50%",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <img
+                        src={profilePreview}
+                        alt="Profile Preview"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          display: "block",
+                        }}
+                      />
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          backgroundColor: "rgba(0,0,0,0.25)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          opacity: 0,
+                          transition: "opacity 0.3s ease",
+                        }}
+                        className="hover-opacity"
+                      >
+                        <p style={{ color: "#fff", fontSize: 12, fontWeight: 500 }}>
+                          Change
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      style={{
                         display: "flex",
+                        flexDirection: "column",
                         alignItems: "center",
                         justifyContent: "center",
-                        transition: "opacity 0.3s",
+                        color: "#9CA3AF",
+                        textAlign: "center",
+                        padding: "0 8px",
                       }}
-                      className="hover-opacity"
                     >
-                      <p style={{ color: "#fff", fontSize: 12 }}>Change</p>
+                      <BsUpload style={{ fontSize: 20, marginBottom: 6 }} />
+                      <p style={{ fontSize: 14, fontWeight: 500 }}>
+                        Upload Profile Image
+                      </p>
                     </div>
-                  </div>
-                ) : (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      textAlign: "center",
-                      color: "#9CA3AF", // gray-400
-                      padding: "0 16px",
-                    }}
-                  >
-                    <BsUpload style={{ fontSize: 20, marginBottom: 8 }} />
-                    <p style={{ fontSize: 14, fontWeight: 500 }}>Upload Profile Image</p>
-                  </div>
-                )}
+                  )}
+                </div>
               </Upload>
             </Form.Item>
           </Col>
         </Row>
-
         {/* Primary Info */}
         <h3>Primary Member Information</h3>
 
@@ -529,9 +578,9 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
                 <Upload.Dragger
                   multiple
                   className="py-16 md:py-20"
-                  // beforeUpload={(file) => handleUpload(file, setEmiratesIdFile)}
-                  // fileList={emiratesIdFile}
-                  // onRemove={(file) => setEmiratesIdFile(prev => prev.filter(f => f.uid !== file.uid))}
+                  beforeUpload={(file) => handleUpload(file, setEmiratesIdFile)}
+                  fileList={emiratesIdFile}
+                  onRemove={(file) => setEmiratesIdFile(prev => prev.filter(f => f.uid !== file.uid))}
                   maxCount={2} // or whatever max you want
                 >
                   <div className="flex flex-col items-center justify-center gap-2 h-full">
@@ -558,9 +607,9 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
                 <Upload.Dragger
                   multiple
                   className="py-16 md:py-20"
-                  // beforeUpload={(file) => handleUpload(file, setPassportFile)}
-                  // fileList={passportFile}
-                  // onRemove={(file) => setPassportFile(prev => prev.filter(f => f.uid !== file.uid))}
+                  beforeUpload={(file) => handleUpload(file, setPassportFile)}
+                  fileList={passportFile}
+                  onRemove={(file) => setPassportFile(prev => prev.filter(f => f.uid !== file.uid))}
                   maxCount={2} // or whatever max you want
                 >
                   <div className="flex flex-col items-center justify-center gap-2 h-full">
