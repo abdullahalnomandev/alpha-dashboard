@@ -19,6 +19,7 @@ import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import { BsUpload } from "react-icons/bs";
 import { useGetMembershipPlansQuery } from "../../redux/apiSlices/membershipPlanSlice";
+import { imageUrl } from "../../redux/api/baseApi";
 
 interface Props {
   open: boolean;
@@ -48,7 +49,6 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
 }) => {
   const [form] = Form.useForm();
 
-  const [profileFile, setProfileFile] = useState<UploadFile[]>([]);
   const [emiratesIdFile, setEmiratesIdFile] = useState<UploadFile[]>([]);
   const [passportFile, setPassportFile] = useState<UploadFile[]>([]);
   const [phone, setPhone] = useState("");
@@ -59,31 +59,39 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
   const { data: membershipData } = useGetMembershipPlansQuery({});
 
-  console.log('profileImageFile', profileImageFile)
+
   /* ---------------- Prefill Edit ---------------- */
   useEffect(() => {
     if (editApplication) {
+      const { dateOfBirth, expireId, family, ...rest } = editApplication;
+
       form.setFieldsValue({
-        ...editApplication,
-        dateOfBirth: editApplication.dateOfBirth
-          ? dayjs(editApplication.dateOfBirth)
-          : null,
-        expireId: editApplication.expireId
-          ? dayjs(editApplication.expireId)
-          : null,
+        ...rest,
+        dateOfBirth: dateOfBirth ? dayjs(dateOfBirth) : null,
+        expireId: expireId ? dayjs(expireId) : null, // <-- convert expireId
+        benefitsAndLifestyleInterests: editApplication.benefitsAndLifestyleInterests || [],
+        confirmAcknowledgement: editApplication.confirmAcknowledgement || false,
+        confirmAgreement: editApplication.confirmAgreement || false,
+        family: {
+          ...family,
+          spouse: {
+            ...family?.spouse,
+            dob: family?.spouse?.dob ? dayjs(family.spouse.dob) : null, // <-- convert spouse DOB
+          },
+          children: family?.children || [],
+        },
       });
 
-      setPhone(editApplication.phone || "");
-      //   setSpousePhone(editApplication?.family?.spouse?.phone || "");
-      // } else {
+      setProfilePreview(editApplication.profileImage ? imageUrl + editApplication.profileImage : null);
+      setEmiratesIdFile(editApplication.image || []);
+      setPassportFile(editApplication.logo || []);
+    } else {
       form.resetFields();
-      setPhone("");
-      // setSpousePhone("");
-      setProfileFile([]);
+      setProfilePreview(null);
       setEmiratesIdFile([]);
       setPassportFile([]);
     }
-  }, [editApplication]);
+  }, [editApplication, form]);
 
   /* ---------------- Submit ---------------- */
   const handleSubmit = async () => {
@@ -126,6 +134,7 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
         );
         formData.append("spouseEmail", values.family.spouse.email);
         formData.append("spousePhone", values.family.spouse.phone);
+
       }
 
       if (values.family.children?.length > 0) {
@@ -149,7 +158,6 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
       if (editApplication) {
         await onUpdate(editApplication._id, formData);
         form.resetFields();
-        setPhone("");
         setProfileImageFile([]);
         setEmiratesIdFile([]);
         setPassportFile([]);
@@ -187,6 +195,7 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
     return false;
   };
 
+
   const handleUpload = (
     file: UploadFile,
     setFile: React.Dispatch<React.SetStateAction<UploadFile[]>>
@@ -207,11 +216,21 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
       confirmLoading={loading}
       width={1100}
       destroyOnClose
+
     >
-      <Form form={form} layout="vertical">
-
-
-
+      <Form form={form} layout="vertical" initialValues={{
+        benefitsAndLifestyleInterests: [],
+        confirmAcknowledgement: false,
+        confirmAgreement: false,
+        membershipType: membershipData?.data?.[0]?.membershipType || null,
+        expireId: null, // <-- default for Expire Date
+        family: {
+          spouse: {
+            dob: null, // <-- default for spouse DOB
+          },
+          children: [],
+        },
+      }} >
         {/* Profile Image */}
         <Row gutter={16}>
           <Col xs={24} md={12}>
@@ -334,19 +353,29 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
             </Form.Item>
           </Col>
 
-          <Col span={12}>
-            <Form.Item name="email" label="Email" rules={[{ required: true }]}>
-              <Input />
-            </Form.Item>
-          </Col>
+          {
+            !editApplication && <>
+              <Col span={12}>
+                <Form.Item name="email" label="Email" rules={[{ required: true }]}>
+                  <Input />
+                </Form.Item>
+              </Col>
 
-          <Col span={12}>
-            <Form.Item label="Phone" rules={[{ required: true }]}>
-              <PhoneInput value={phone} onChange={setPhone} defaultCountry="ae" placeholder="Enter phone"
+              <Col span={12}>
+                <Form.Item label="Phone" rules={[{ required: true }]}>
+                  <PhoneInput
+                    defaultCountry="ae"
+                    inputClassName="w-full rounded-md bg-[#F1F1F1] !h-10 border-none"
+                    placeholder="Enter phone"
+                     onChange={(value) => setPhone(value)}
+                    value={phone}
+                  />
+                </Form.Item>
+              </Col>
+            </>
+          }
 
-              />
-            </Form.Item>
-          </Col>
+
 
 
           <Col span={12}>
