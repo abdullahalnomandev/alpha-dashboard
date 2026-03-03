@@ -599,7 +599,7 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
             {/* Passport */}
             <Col xs={24} md={12}>
               <Form.Item
-                label="Passport"
+                label="Passport Photo"
                 name="logo"
                 rules={[{ required: true, message: "Passport is required" }]}
                 className="w-full"
