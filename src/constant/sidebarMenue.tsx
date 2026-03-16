@@ -31,6 +31,9 @@ import EventRegistrationPage from "../component/event-registration";
 import ContactUsPage from "../pages/settings/ContactUsPage";
 import { IoCallOutline } from "react-icons/io5";
 import PartnerShipApplicationPage from "../pages/partnership-application";
+import ContactInfo from "../component/contact-info";
+import { TiMessage } from "react-icons/ti";
+import Feedback from "../component/feedback";
 
 
 export const MENU_CONFIG = [
@@ -118,6 +121,21 @@ export const MENU_CONFIG = [
     element: <ExclusiveOfferPage />,
     path: '/offer',
   },
+
+  {
+    key: 'contact-info',     // make the key unique among all menu items
+    label: 'Contacts',
+    icon: <IoCallOutline />,
+    element: <ContactInfo />,
+    path: '/contacts',
+  },
+  {
+    key:"feedback",
+    label:"Feedback",
+    icon:<TiMessage />,
+    element:<Feedback />,
+    path:"/feedback"
+  },
   {
     key: 'memberships',
     label: 'Memberships',
@@ -145,7 +163,6 @@ export const MENU_CONFIG = [
     label: 'Settings',
     icon: <CiSettings />,
     children: [
-
       {
         key: 'contact-us',     // make the key unique among all menu items
         label: 'Contact Us',
