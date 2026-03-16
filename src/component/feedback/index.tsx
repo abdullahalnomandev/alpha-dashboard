@@ -4,7 +4,6 @@ import {
   Typography,
   Input,
   Button,
-  Spin,
   message,
   Space,
   Popconfirm,
@@ -12,7 +11,7 @@ import {
 } from "antd";
 import type { TableColumnsType, TablePaginationConfig } from "antd";
 import { FiSearch } from "react-icons/fi";
-import { EyeOutlined, PlusOutlined, DeleteOutlined } from "@ant-design/icons";
+import {  DeleteOutlined } from "@ant-design/icons";
 
 import {
   useGetFeedbacksQuery,
