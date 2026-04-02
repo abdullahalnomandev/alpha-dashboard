@@ -1,10 +1,23 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
-// https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    host: true,
-  },
-})
+export default defineConfig(() => {
+  return {
+    plugins: [
+      react({
+        babel: {
+          plugins: [["babel-plugin-react-compiler"]],
+        },
+      }),
+    ],
+
+    server: {
+      host: true, // dev only
+    },
+
+    preview: {
+      host: true,
+      allowedHosts: ["dashboard.alphaclubuae.com" ,"alphaclubuae.com"],
+    },
+  };
+});
