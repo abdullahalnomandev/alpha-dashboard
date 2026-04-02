@@ -17,7 +17,7 @@ export default defineConfig(() => {
 
     preview: {
       host: true,
-      allowedHosts: ["dashboard.alphaclubuae.com" ,"alphaclubuae.com"],
+      allowedHosts: ["dashboard.alphaclubuae.com" ,"alphaclubuae.com","www.alphaclubuae.com" , "www.dashboard.alphaclubuae.com"],
     },
   };
 });
