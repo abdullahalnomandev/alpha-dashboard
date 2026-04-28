@@ -21,7 +21,7 @@ import { MENU_CONFIG } from "../constant/sidebarMenue";
 import { handleLogout } from "../services/auth.service";
 import { useProfileQuery } from "../redux/apiSlices/authSlice";
 import { imageUrl } from "../redux/api/baseApi";
-import logo from "../assets/alpha_logo.svg";
+import logo from "../assets/alpha-bg.png";
 import {
   useClearNotificationsMutation,
   useGetNotificationCountQuery,
@@ -261,9 +261,9 @@ const DashboardLayout: React.FC = () => {
           {...(isMobile
             ? {}
             : {
-                openKeys: openKeys,
-                onOpenChange: onMenuOpenChange,
-              })}
+              openKeys: openKeys,
+              onOpenChange: onMenuOpenChange,
+            })}
           items={menuItems}
           style={{
             borderInline: 0,
@@ -355,11 +355,11 @@ const DashboardLayout: React.FC = () => {
         <Avatar
           src={
             profile?.data?.profileImage &&
-            profile.data.profileImage.startsWith("http")
+              profile.data.profileImage.startsWith("http")
               ? profile.data.profileImage
               : profile?.data?.profileImage
-              ? `${imageUrl}/${profile.data.profileImage}`
-              : undefined
+                ? `${imageUrl}/${profile.data.profileImage}`
+                : undefined
           }
         />
         {/* Do not show name in navbar, name only appears inside dropdown */}
@@ -390,12 +390,12 @@ const DashboardLayout: React.FC = () => {
             {/* Logo/Header */}
             <div
               style={{
-                height: 100,
+                height: 115, // ⬅️ increase container height
                 display: "flex",
                 alignItems: "center",
                 paddingInline: 24,
                 fontWeight: 600,
-                fontSize: 18,
+                fontSize: 24,
                 letterSpacing: 1,
                 flexShrink: 0,
                 justifyContent: "center",
@@ -416,7 +416,7 @@ const DashboardLayout: React.FC = () => {
                   src={logo}
                   alt="Logo"
                   style={{
-                    height: 80,
+                    height: 100, // ⬅️ bigger logo
                     display: "block",
                   }}
                 />
@@ -462,10 +462,13 @@ const DashboardLayout: React.FC = () => {
           {/* Logo/Header */}
           <div
             style={{
-              height: 100,
+              height: 115, // ⬅️ increase container height
               display: "flex",
               alignItems: "center",
               paddingInline: 24,
+              fontWeight: 600,
+              fontSize: 24,
+              letterSpacing: 1,
               flexShrink: 0,
               justifyContent: "center",
             }}
@@ -485,7 +488,7 @@ const DashboardLayout: React.FC = () => {
                 src={logo}
                 alt="Logo"
                 style={{
-                  height: 80,
+                  height: 120, // ⬅️ bigger logo
                   display: "block",
                 }}
               />

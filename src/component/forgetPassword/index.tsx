@@ -69,7 +69,7 @@ const ForgetPassword: React.FC = () => {
           }}
         >
           <img
-            src="./src/assets/alpha_logo.svg"
+            src="./src/assets/alpha-png.jpeg"
             alt="Logo"
             style={{
               width: 54,

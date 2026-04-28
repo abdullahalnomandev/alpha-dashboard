@@ -10,7 +10,7 @@ import {
 import { Link } from "react-router-dom";
 import { setToLocalStorage } from "../../services/auth.service";
 import { useLoginMutation } from "../../redux/apiSlices/authSlice";
-import logo from "../../assets/alpha_logo.svg";
+import logo from "../../assets/alpha-png.jpeg";
 
 const { Text, Title } = Typography;
 
