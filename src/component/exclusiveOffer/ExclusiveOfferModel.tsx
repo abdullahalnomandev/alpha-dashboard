@@ -267,7 +267,7 @@ export const ExclusiveOfferModel: React.FC<{
         <Form.Item
           label="User"
           name="user"
-          rules={[{ required: true, message: "Please select a user" }]}
+          // rules={[{ required: true, message: "Please select a user" }]}
         >
           <Select
             placeholder={usersLoading ? "Loading users..." : "Search name or email"}
