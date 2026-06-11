@@ -21,6 +21,7 @@ export const ExclusiveOfferModel: React.FC<{
   const [form] = Form.useForm();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [html, setHtml] = useState<string>("");
+  const [businessHtml, setBusinessHtml] = useState<string>("");
   const [removedFiles, setRemovedFiles] = useState<string[]>([]);
   const [userSearch, setUserSearch] = useState<string>("");
   // Fetch offer categories with high enough limit to show all
@@ -79,6 +80,7 @@ export const ExclusiveOfferModel: React.FC<{
           : undefined,
       });
       setHtml((editEvent as any).description || "");
+      setBusinessHtml((editEvent as any).businessDescription || "");
       setDiscountEnable(!!editEvent.discount?.enable);
 
       const existingImages = (editEvent as any).image;
@@ -147,6 +149,8 @@ export const ExclusiveOfferModel: React.FC<{
       formData.append("title", values.title);
       formData.append("address", values.address);
       formData.append("description", html || "");
+      formData.append("businessDescription", businessHtml || "");
+
       if (values.category) {
         formData.append("category", values.category);
       }
@@ -320,7 +324,7 @@ export const ExclusiveOfferModel: React.FC<{
           />
         </Form.Item>
         <Form.Item
-          label="Description"
+          label="Offer Description"
           required={false}
           style={{ marginBottom: 24 }}
         >
@@ -329,7 +333,20 @@ export const ExclusiveOfferModel: React.FC<{
             onChange={(e) => setHtml(e.target.value)}
             aria-multiline
             style={{ minHeight: 150, height: 150 }}
-            placeholder="Write Description"
+            placeholder="Write Offer Description"
+          />
+        </Form.Item>
+        <Form.Item
+          label=" Business Description"
+          required={false}
+          style={{ marginBottom: 24 }}
+        >
+          <Editor
+            value={businessHtml}
+            onChange={(e) => setBusinessHtml(e.target.value)}
+            aria-multiline
+            style={{ minHeight: 150, height: 150 }}
+            placeholder="Write Business Description"
           />
         </Form.Item>
         <Form.Item label="Image">
