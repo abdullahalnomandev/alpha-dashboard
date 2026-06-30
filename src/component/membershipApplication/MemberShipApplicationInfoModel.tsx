@@ -1,8 +1,13 @@
 import { Descriptions, Image, Modal, Row, Col } from "antd";
-import { EyeOutlined } from "@ant-design/icons";
+import { EyeOutlined, FilePdfOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import type { MembershipApplicationType } from ".";
 import { imageUrl } from "../../redux/api/baseApi";
+
+// Helper to check if a file is a PDF
+const isPdf = (fileName: string) => {
+  return /\.pdf$/i.test(fileName);
+};
 
 export const MemberShipApplicationInfoModel: React.FC<{
   open: boolean;
@@ -25,32 +30,51 @@ export const MemberShipApplicationInfoModel: React.FC<{
                 display: "inline-block",
               }}
             >
-              <Image
-                src={imageUrl + application.profileImage}
-                alt="Profile"
-                preview={{
-                  mask: (
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        height: "100%",
-                        width: "100%",
-                        borderRadius: "50%", // match the image rounding
-                        backgroundColor: "rgba(0, 0, 0, 0.31)", // semi-dark hover
-                      }}
-                    >
-                      <EyeOutlined style={{ color: "#fff", fontSize: 18 }} />
-                    </div>
-                  ),
-                }}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                }}
-              />
+              {isPdf(application.profileImage) ? (
+                <div
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    backgroundColor: "#f5f5f5",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => window.open(imageUrl + application.profileImage, "_blank")}
+                >
+                  <FilePdfOutlined style={{ fontSize: 30, color: "#ff4d4f" }} />
+                  <div style={{ fontSize: 10 }}>PDF</div>
+                </div>
+              ) : (
+                <Image
+                  src={imageUrl + application.profileImage}
+                  alt="Profile"
+                  preview={{
+                    mask: (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          height: "100%",
+                          width: "100%",
+                          borderRadius: "50%", // match the image rounding
+                          backgroundColor: "rgba(0, 0, 0, 0.31)", // semi-dark hover
+                        }}
+                      >
+                        <EyeOutlined style={{ color: "#fff", fontSize: 18 }} />
+                      </div>
+                    ),
+                  }}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+              )}
             </div>
           )}
           <div style={{ fontSize: 20, color: "#555" }}>{application.name}</div>
@@ -142,9 +166,12 @@ export const MemberShipApplicationInfoModel: React.FC<{
           <Descriptions.Item label="Confirm Agreement">
             {application.confirmAgreement ? "Yes" : "No"}
           </Descriptions.Item>
-          <Descriptions.Item label="Address">
-            {application.address ?? "-"}
+          <Descriptions.Item label="Emirate">
+            {application.emirate ?? "-"}
           </Descriptions.Item>
+          {/* <Descriptions.Item label="Address">
+            {application.address ?? "-"}
+          </Descriptions.Item> */}
           <Descriptions.Item label="Status">
             <span
               style={{
@@ -170,9 +197,10 @@ export const MemberShipApplicationInfoModel: React.FC<{
           {application.image && application.image.length > 0 && (
             <Descriptions.Item label="Emirates ID">
               <Row gutter={[16, 16]}>
+                {/* Image Previews */}
                 <Image.PreviewGroup>
-                  {application.image.map((img, idx) => (
-                    <Col key={idx}>
+                  {application.image.filter((img) => !isPdf(img as string)).map((img, idx) => (
+                    <Col key={`img-${idx}`}>
                       <Image
                         src={imageUrl + img}
                         alt={`Attachment ${idx + 1}`}
@@ -205,6 +233,28 @@ export const MemberShipApplicationInfoModel: React.FC<{
                     </Col>
                   ))}
                 </Image.PreviewGroup>
+                {/* PDF Previews */}
+                {application.image.filter((img) => isPdf(img as string)).map((img, idx) => (
+                  <Col key={`pdf-${idx}`}>
+                    <div
+                      style={{
+                        width: 100,
+                        height: 100,
+                        borderRadius: 8,
+                        backgroundColor: "#f5f5f5",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => window.open(imageUrl + img, "_blank")}
+                    >
+                      <FilePdfOutlined style={{ fontSize: 40, color: "#ff4d4f" }} />
+                      <div style={{ fontSize: 12, marginTop: 4 }}>PDF</div>
+                    </div>
+                  </Col>
+                ))}
               </Row>
             </Descriptions.Item>
           )}
@@ -213,9 +263,10 @@ export const MemberShipApplicationInfoModel: React.FC<{
           {application.logo && application.logo.length > 0 && (
             <Descriptions.Item label="Passport">
               <Row gutter={[16, 16]}>
+                {/* Image Previews */}
                 <Image.PreviewGroup>
-                  {application.logo.map((img, idx) => (
-                    <Col key={idx}>
+                  {application.logo.filter((img) => !isPdf(img as string)).map((img, idx) => (
+                    <Col key={`img-${idx}`}>
                       <Image
                         src={imageUrl + img}
                         alt={`Logo ${idx + 1}`}
@@ -248,6 +299,28 @@ export const MemberShipApplicationInfoModel: React.FC<{
                     </Col>
                   ))}
                 </Image.PreviewGroup>
+                {/* PDF Previews */}
+                {application.logo.filter((img) => isPdf(img as string)).map((img, idx) => (
+                  <Col key={`pdf-${idx}`}>
+                    <div
+                      style={{
+                        width: 100,
+                        height: 100,
+                        borderRadius: 8,
+                        backgroundColor: "#f5f5f5",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => window.open(imageUrl + img, "_blank")}
+                    >
+                      <FilePdfOutlined style={{ fontSize: 40, color: "#ff4d4f" }} />
+                      <div style={{ fontSize: 12, marginTop: 4 }}>PDF</div>
+                    </div>
+                  </Col>
+                ))}
               </Row>
             </Descriptions.Item>
           )}

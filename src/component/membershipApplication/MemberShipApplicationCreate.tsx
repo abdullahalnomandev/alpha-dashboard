@@ -11,6 +11,7 @@ import {
   Col,
   InputNumber,
   Radio,
+  Select,
 } from "antd";
 import { useEffect, useState } from "react";
 import type { UploadFile } from "antd/es/upload/interface";
@@ -36,6 +37,16 @@ const benefitsInterests = [
   { value: "travel", label: "Travel & Hospitality" },
   { value: "automotive", label: "Automotive & Motorsport" },
   { value: "lifestyle", label: "Lifestyle & Wellness" },
+];
+
+const emirateOptions = [
+  { value: "Abu Dhabi", label: "Abu Dhabi" },
+  { value: "Dubai", label: "Dubai" },
+  { value: "Sharjah", label: "Sharjah" },
+  { value: "Ajman", label: "Ajman" },
+  { value: "Umm Al Quwain", label: "Umm Al Quwain" },
+  { value: "Ras Al Khaimah", label: "Ras Al Khaimah" },
+  { value: "Fujairah", label: "Fujairah" },
 ];
 
 
@@ -107,7 +118,8 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
     formData.append("dateOfBirth", values.dateOfBirth?.toISOString());
     formData.append("nationality", values.nationality);
     formData.append("countryOfResidence", values.countryOfResidence);
-    formData.append("residenceAddress", values.residenceAddress);
+    formData.append("emirate", values.emirate);
+    // formData.append("residenceAddress", values.residenceAddress);
     formData.append("industrySector", values.industrySector);
     formData.append("yearsOfExperience", values.yearsOfExperience);
     formData.append("currentEmployer", values.currentEmployer);
@@ -395,10 +407,15 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
               <Input />
             </Form.Item>
           </Col>
-
+{/* 
           <Col span={24}>
             <Form.Item name="residenceAddress" label="Residence Address" style={{ width: "100%" }} rules={[{ required: true }]}>
               <Input.TextArea rows={2} />
+            </Form.Item>
+          </Col> */}
+          <Col span={12}>
+            <Form.Item name="emirate" label="Emirate" style={{ width: "100%" }} rules={[{ required: true }]}>
+              <Select placeholder="Select your emirate" options={emirateOptions} />
             </Form.Item>
           </Col>
         </Row>
@@ -626,7 +643,7 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
             </Col>
 
             {/* Passport */}
-            <Col xs={24} md={12}>
+            {/* <Col xs={24} md={12}>
               <Form.Item
                 label="Passport Photo"
                 name="logo"
@@ -652,7 +669,7 @@ export const MemberShipApplicationCreate: React.FC<Props> = ({
                   </div>
                 </Upload.Dragger>
               </Form.Item>
-            </Col>
+            </Col> */}
           </Row>
         </div>
 

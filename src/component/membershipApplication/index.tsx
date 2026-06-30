@@ -51,7 +51,7 @@ export type MembershipApplicationType = {
   updatedAt: string;
   memberShipId: string;
   from?: string; // Add new optional "from" field
-
+  emirate?: string; // Add new optional "emirate" field
   jobTitle: String;
   organizationName: String;
   dateOfBirth: Date;
